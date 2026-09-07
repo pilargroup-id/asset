@@ -35,4 +35,37 @@ async function history(assetId,conn=requireDb()){const [r]=await conn.query('SEL
 async function assignments(assetId,conn=requireDb()){const [r]=await conn.query('SELECT * FROM asset_assignments WHERE asset_id=? ORDER BY assigned_at DESC,id DESC',[assetId]);return r;}
 async function transfers(assetId,conn=requireDb()){const [r]=await conn.query('SELECT * FROM asset_transfers WHERE asset_id=? ORDER BY transfer_date DESC,id DESC',[assetId]);return r;}
 async function maintenances(assetId,conn=requireDb()){const [r]=await conn.query('SELECT am.*,v.name vendor_name FROM asset_maintenances am LEFT JOIN master_vendors v ON v.id=am.vendor_id WHERE am.asset_id=? ORDER BY am.start_date DESC,id DESC',[assetId]);return r;}
-module.exports={list,get,create,update,setState,saveAttributes,getAttributes,createAssignment,getAssignment,closeAssignment,createTransfer,createMaintenance,getMaintenance,completeMaintenance,addHistory,history,assignments,transfers,maintenances};
+
+async function findCurrentAssetsByAssignedUser({userId,managingDepartmentId=null,companyId=null},conn=requireDb()){
+  const where=["x.assignment_type='USER'","x.assigned_user_id=?","x.returned_at IS NULL","a.current_assignment_id=x.id"];
+  const params=[String(userId)];
+  if(managingDepartmentId!=null){where.push('a.managing_department_id=?');params.push(managingDepartmentId);}
+  if(companyId!=null){where.push('a.company_id=?');params.push(String(companyId));}
+  const [rows]=await conn.query(`SELECT a.id,a.asset_number,a.asset_name,a.serial_number,a.managing_department_id,a.company_id,a.current_location_id,a.status,a.asset_condition,
+    c.id category_id,c.name category_name,b.name brand_name,m.name model_name,l.code current_location_code,l.name current_location_name,
+    x.id assignment_id,x.assigned_user_id,x.assigned_user_name_snapshot,x.assigned_at,x.purpose assignment_purpose
+    FROM assets a JOIN asset_assignments x ON x.id=a.current_assignment_id
+    JOIN master_categories c ON c.id=a.category_id
+    LEFT JOIN master_brands b ON b.id=a.brand_id LEFT JOIN master_models m ON m.id=a.model_id LEFT JOIN master_locations l ON l.id=a.current_location_id
+    WHERE ${where.join(' AND ')} ORDER BY a.asset_number`,params);
+  return rows;
+}
+async function findExternalReference(data,conn=requireDb()){
+  const [rows]=await conn.query(`SELECT * FROM asset_external_references WHERE asset_id=? AND source_system=? AND reference_type=? AND reference_id=? LIMIT 1`,[data.asset_id,data.source_system,data.reference_type,data.reference_id]);
+  return rows[0]||null;
+}
+async function createExternalReference(data,conn=requireDb()){
+  const [result]=await conn.query(`INSERT INTO asset_external_references (asset_id,source_system,reference_type,reference_id,reference_number,linked_by_user_id) VALUES (?,?,?,?,?,?)`,[data.asset_id,data.source_system,data.reference_type,data.reference_id,data.reference_number||null,data.linked_by_user_id||null]);
+  return result.insertId;
+}
+async function getExternalReference(id,conn=requireDb()){
+  const [rows]=await conn.query('SELECT * FROM asset_external_references WHERE id=? LIMIT 1',[id]);
+  return rows[0]||null;
+}
+async function externalReferences(assetId,sourceSystem=null,conn=requireDb()){
+  const params=[assetId];let sql='SELECT * FROM asset_external_references WHERE asset_id=?';
+  if(sourceSystem){sql+=' AND source_system=?';params.push(String(sourceSystem).toLowerCase());}
+  sql+=' ORDER BY linked_at DESC,id DESC';
+  const [rows]=await conn.query(sql,params);return rows;
+}
+module.exports={list,get,create,update,setState,saveAttributes,getAttributes,createAssignment,getAssignment,closeAssignment,createTransfer,createMaintenance,getMaintenance,completeMaintenance,addHistory,history,assignments,transfers,maintenances,findCurrentAssetsByAssignedUser,findExternalReference,createExternalReference,getExternalReference,externalReferences};

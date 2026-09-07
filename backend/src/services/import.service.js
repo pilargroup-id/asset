@@ -98,7 +98,7 @@ async function findAssetByNumber(assetNumber, conn = requireDb(), forUpdate = fa
   return rows[0] || null;
 }
 
-async function validateAssetRow(row, userId) {
+async function validateAssetRow(row, userContext) {
   const errors = [];
   const warnings = [];
   const existing = supplied(row, 'asset_number') ? await findAssetByNumber(String(row.asset_number).trim()) : null;
@@ -151,12 +151,12 @@ async function validateAssetRow(row, userId) {
   }
 
   if (action === 'CREATE' && supplied(row, 'managing_department_id') && supplied(row, 'company_id')) {
-    await PermissionService.assertScope(userId, 'IMPORT_DATA', row.company_id, row.managing_department_id)
+    await PermissionService.assertScope(userContext, 'IMPORT_DATA', row.company_id, row.managing_department_id)
       .catch(() => errors.push('permission scope does not allow asset scope'));
   }
 
   if (action === 'UPDATE') {
-    await PermissionService.assertScope(userId, 'IMPORT_DATA', existing.company_id, existing.managing_department_id)
+    await PermissionService.assertScope(userContext, 'IMPORT_DATA', existing.company_id, existing.managing_department_id)
       .catch(() => errors.push('permission scope does not allow asset scope'));
 
     if (supplied(row, 'company_id') && String(row.company_id) !== String(existing.company_id)) {
@@ -204,15 +204,15 @@ async function validateAssetRow(row, userId) {
   return { action, errors, warnings };
 }
 
-async function validateRow(type, row, userId) {
-  if (type === 'ASSET') return validateAssetRow(row, userId);
+async function validateRow(type, row, userContext) {
+  if (type === 'ASSET') return validateAssetRow(row, userContext);
 
   const errors = [];
   const warnings = [];
   let action = 'CREATE';
 
   if (type === 'CATEGORY') {
-    await PermissionService.assertGlobal(userId, 'IMPORT_DATA').catch(() => errors.push('GLOBAL IMPORT_DATA is required for category import'));
+    await PermissionService.assertGlobal(userContext, 'IMPORT_DATA').catch(() => errors.push('GLOBAL IMPORT_DATA is required for category import'));
     required(row, ['code', 'name', 'tracking_type'], errors);
     if (supplied(row, 'tracking_type') && !Object.values(TRACKING_TYPES).includes(String(row.tracking_type).toUpperCase())) errors.push('tracking_type must be SERIALIZED_ASSET or CONSUMABLE');
     if (supplied(row, 'code') && await findBy('master_categories', 'code', row.code)) errors.push('category code already exists');
@@ -221,30 +221,30 @@ async function validateRow(type, row, userId) {
   if (type === 'LOCATION') {
     required(row, ['code', 'name'], errors);
     if (supplied(row, 'code') && await findBy('master_locations', 'code', row.code)) errors.push('location code already exists');
-    if (supplied(row, 'company_id')) await PermissionService.assertScope(userId, 'IMPORT_DATA', row.company_id, null).catch(() => errors.push('permission scope does not allow company_id'));
+    if (supplied(row, 'company_id')) await PermissionService.assertScope(userContext, 'IMPORT_DATA', row.company_id, null).catch(() => errors.push('permission scope does not allow company_id'));
   }
 
   if (type === 'VENDOR') {
-    await PermissionService.assertGlobal(userId, 'IMPORT_DATA').catch(() => errors.push('GLOBAL IMPORT_DATA is required for vendor import'));
+    await PermissionService.assertGlobal(userContext, 'IMPORT_DATA').catch(() => errors.push('GLOBAL IMPORT_DATA is required for vendor import'));
     required(row, ['name'], errors);
     if (supplied(row, 'code') && await findBy('master_vendors', 'code', row.code)) errors.push('vendor code already exists');
   }
 
   if (type === 'BRAND') {
-    await PermissionService.assertGlobal(userId, 'IMPORT_DATA').catch(() => errors.push('GLOBAL IMPORT_DATA is required for brand import'));
+    await PermissionService.assertGlobal(userContext, 'IMPORT_DATA').catch(() => errors.push('GLOBAL IMPORT_DATA is required for brand import'));
     required(row, ['name'], errors);
     if (supplied(row, 'code') && await findBy('master_brands', 'code', row.code)) errors.push('brand code already exists');
   }
 
   if (type === 'MODEL') {
-    await PermissionService.assertGlobal(userId, 'IMPORT_DATA').catch(() => errors.push('GLOBAL IMPORT_DATA is required for model import'));
+    await PermissionService.assertGlobal(userContext, 'IMPORT_DATA').catch(() => errors.push('GLOBAL IMPORT_DATA is required for model import'));
     required(row, ['name'], errors);
   }
 
   if (type === 'DEPRECIATION_POLICY') {
     required(row, ['name', 'managing_department_id', 'useful_life_months'], errors);
     if (supplied(row, 'managing_department_id')) {
-      await PermissionService.assertScope(userId, 'IMPORT_DATA', row.company_id || null, row.managing_department_id).catch(() => errors.push('permission scope does not allow policy scope'));
+      await PermissionService.assertScope(userContext, 'IMPORT_DATA', row.company_id || null, row.managing_department_id).catch(() => errors.push('permission scope does not allow policy scope'));
     }
   }
 
@@ -257,7 +257,7 @@ async function validateRow(type, row, userId) {
     if (supplied(row, 'uom_code') && !(await findBy('master_uoms', 'code', row.uom_code))) errors.push('uom_code not found');
     if (supplied(row, 'brand_code') && !(await findBy('master_brands', 'code', row.brand_code))) errors.push('brand_code not found');
     if (supplied(row, 'managing_department_id') && supplied(row, 'company_id')) {
-      await PermissionService.assertScope(userId, 'IMPORT_DATA', row.company_id, row.managing_department_id).catch(() => errors.push('permission scope does not allow consumable scope'));
+      await PermissionService.assertScope(userContext, 'IMPORT_DATA', row.company_id, row.managing_department_id).catch(() => errors.push('permission scope does not allow consumable scope'));
     }
     if (!supplied(row, 'consumable_code')) warnings.push('consumable_code blank: active numbering configuration will be used on commit');
   }
@@ -267,7 +267,7 @@ async function validateRow(type, row, userId) {
     required(row, ['consumable_code', 'location_code', 'opening_quantity'], errors);
     const item = supplied(row, 'consumable_code') ? await findBy('consumables', 'consumable_code', row.consumable_code) : null;
     if (!item) errors.push('consumable_code not found');
-    else await PermissionService.assertScope(userId, 'IMPORT_DATA', item.company_id, item.managing_department_id).catch(() => errors.push('permission scope does not allow consumable'));
+    else await PermissionService.assertScope(userContext, 'IMPORT_DATA', item.company_id, item.managing_department_id).catch(() => errors.push('permission scope does not allow consumable'));
     if (supplied(row, 'location_code') && !(await findBy('master_locations', 'code', row.location_code))) errors.push('location_code not found');
     if (supplied(row, 'opening_quantity') && Number(row.opening_quantity) < 0) errors.push('opening_quantity cannot be negative');
   }
@@ -296,7 +296,7 @@ async function ownedRecord(token, userId, expectResult = false) {
 }
 
 async function preview(req) {
-  await PermissionService.assertAny(req.user.id, 'IMPORT_DATA');
+  await PermissionService.assertAny(req.user, 'IMPORT_DATA');
   await PreviewStorage.cleanupExpired();
 
   const type = String(req.params.type || '').toUpperCase();
@@ -326,7 +326,7 @@ async function preview(req) {
   }[type];
 
   for (const item of normalized) {
-    const result = await validateRow(type, item.row, req.user.id);
+    const result = await validateRow(type, item.row, req.user);
     if (uniqueField && supplied(item.row, uniqueField)) {
       const key = String(item.row[uniqueField]).trim().toUpperCase();
       if (seen.has(key)) result.errors.push(`duplicate ${uniqueField} inside import file`);
@@ -363,7 +363,7 @@ async function preview(req) {
 }
 
 async function getPreview(req) {
-  await PermissionService.assertAny(req.user.id, 'IMPORT_DATA');
+  await PermissionService.assertAny(req.user, 'IMPORT_DATA');
   return publicRecord(await ownedRecord(req.params.previewToken, req.user.id, false));
 }
 
@@ -437,7 +437,7 @@ async function commitAsset(row, userId, req, correlationId) {
   if (existingBefore) {
     return withTransaction(async (conn) => {
       const old = await findAssetByNumber(String(row.asset_number).trim(), conn, true);
-      await PermissionService.assertScope(userId, 'IMPORT_DATA', old.company_id, old.managing_department_id, conn);
+      await PermissionService.assertScope(req.user, 'IMPORT_DATA', old.company_id, old.managing_department_id, conn);
       const resolved = await resolveAssetReferences(row, conn, old);
       const patch = buildAssetPatch(row, resolved);
       await AssetModel.update(old.id, { ...patch, updated_by: userId }, conn);
@@ -475,7 +475,7 @@ async function commitAsset(row, userId, req, correlationId) {
   }
 
   return withTransaction(async (conn) => {
-    await PermissionService.assertScope(userId, 'IMPORT_DATA', row.company_id, row.managing_department_id, conn);
+    await PermissionService.assertScope(req.user, 'IMPORT_DATA', row.company_id, row.managing_department_id, conn);
     const resolved = await resolveAssetReferences(row, conn);
     const initialStatus = supplied(row, 'current_assignment_type') ? 'ASSIGNED' : (supplied(row, 'status') ? String(row.status).toUpperCase() : 'AVAILABLE');
     const id = await AssetModel.create({
@@ -568,7 +568,7 @@ async function commitConsumable(row, userId, req, correlationId) {
 async function commitOpening(row, userId, req, correlationId) {
   return withTransaction(async (conn) => {
     const item = await findBy('consumables', 'consumable_code', row.consumable_code, conn);
-    await PermissionService.assertScope(userId, 'IMPORT_DATA', item.company_id, item.managing_department_id, conn);
+    await PermissionService.assertScope(req.user, 'IMPORT_DATA', item.company_id, item.managing_department_id, conn);
     const location = await findBy('master_locations', 'code', row.location_code, conn);
     const balance = await ConsumableModel.lockBalance(item.id, location.id, conn);
     const quantity = Number(row.opening_quantity);
@@ -620,7 +620,7 @@ async function applyRow(type, row, req, correlationId) {
 }
 
 async function commit(req) {
-  await PermissionService.assertAny(req.user.id, 'IMPORT_DATA');
+  await PermissionService.assertAny(req.user, 'IMPORT_DATA');
   const token = String(req.body?.preview_token || '').trim();
   if (!token) throw appError('preview_token is required', 400, 'PREVIEW_TOKEN_REQUIRED');
   const record = await ownedRecord(token, req.user.id, false);
@@ -633,7 +633,7 @@ async function commit(req) {
       continue;
     }
 
-    const refreshed = await validateRow(record.import_type, { ...previewRow.original }, req.user.id);
+    const refreshed = await validateRow(record.import_type, { ...previewRow.original }, req.user);
     if (refreshed.errors.length) {
       failures.push({
         ...previewRow,
@@ -693,7 +693,7 @@ async function commit(req) {
 }
 
 async function cancel(req) {
-  await PermissionService.assertAny(req.user.id, 'IMPORT_DATA');
+  await PermissionService.assertAny(req.user, 'IMPORT_DATA');
   const record = await ownedRecord(req.params.previewToken, req.user.id, false);
   await PreviewStorage.remove(record.token);
   await ActivityLog.log(req, {
@@ -706,7 +706,7 @@ async function cancel(req) {
 }
 
 async function downloadErrors(req) {
-  await PermissionService.assertAny(req.user.id, 'IMPORT_DATA');
+  await PermissionService.assertAny(req.user, 'IMPORT_DATA');
   const record = await ownedRecord(req.params.errorFileToken, req.user.id, true);
   if (!record.rows?.length) throw appError('Import has no failed rows', 404, 'IMPORT_ERRORS_NOT_FOUND');
 
@@ -743,7 +743,7 @@ const templates = {
 };
 
 async function template(req) {
-  await PermissionService.assertAny(req.user.id, 'IMPORT_DATA');
+  await PermissionService.assertAny(req.user, 'IMPORT_DATA');
   const type = String(req.params.type || '').toUpperCase();
   if (!templates[type]) throw appError('Unsupported import type', 400, 'IMPORT_TYPE_NOT_SUPPORTED');
 

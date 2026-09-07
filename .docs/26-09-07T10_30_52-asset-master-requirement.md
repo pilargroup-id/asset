@@ -1,3 +1,25 @@
+# Asset Management System — Master Requirement + Final Implementation Decisions
+
+## Final decisions added after the original master prompt
+
+The original requirement below remains authoritative unless explicitly overridden by these newer confirmed decisions.
+
+1. Project/app slug is `asset`; PilarGroup app `asset` will be added and old `assetit` will later be made inactive.
+2. Canonical user identifier is `/auth/me.id` UUID. `internal_id` is not the primary Asset authorization identity.
+3. Department IDs are integers; company IDs are opaque strings.
+4. Local authorization uses one `permission_assignments` table.
+5. `subject_type` = USER / COMPANY / DEPARTMENT determines who inherits a permission.
+6. `access_scope_type` = GLOBAL / COMPANY / DEPARTMENT determines data breadth.
+7. Matching permission assignments are additive/UNION. No DENY and no subject priority is implemented.
+8. `export_history` is not required and does not exist. Export audit is stored only in `activity_logs`.
+9. Import spreadsheets are not persisted. Preview/result state uses temporary JSON under `backend/storage/import-previews`, with TTL and `.gitkeep` for the directory.
+10. There are no permanent import batch/row tables.
+11. Asset is integration-ready for the future multi-department Ticket system using `asset_external_references` and protected internal APIs.
+12. Ticket/other systems must not query the Asset DB directly or create cross-database FKs.
+13. A separate Ticket integration API document is included in `.docs`.
+
+---
+
 # Master Prompt — Pilar Group Asset Management System
 
 ## Tujuan Dokumen
@@ -2038,6 +2060,8 @@ Berikut non-negotiable concepts yang sudah disepakati:
 
 Hal berikut BELUM dianggap final dan perlu dikonfirmasi ketika mulai implementation:
 
+- nama project baru,
+- subdomain baru atau tetap menggunakan `assetit`,
 - tech stack backend/frontend,
 - database engine,
 - exact database schema,
@@ -2188,50 +2212,3 @@ Jika task saat itu hanya design/concept, boleh mengusulkan struktur ideal tetapi
 - optional future enhancement.
 
 Tujuan utama project ini adalah membangun **central, multi-department Asset Management System Pilar Group yang auditable, configurable, dan dapat berkembang tanpa hardcode terhadap department tertentu.**
-
-# 69. Final Import / Export Storage Decision — 07 Sep 2026
-
-This decision supersedes the previous database-backed import preview implementation.
-
-1. Uploaded XLSX/XLS/CSV binaries are accepted with `multer.memoryStorage()` and parsed from the request buffer.
-2. Uploaded spreadsheet binaries are never persisted to disk.
-3. Parsed preview state is saved temporarily as JSON under `backend/storage/import-previews/<preview_token>.json`.
-4. Temporary preview JSON defaults to a 60-minute TTL and is removed on commit, cancel, or expiry cleanup.
-5. `backend/storage/import-previews/.gitkeep` keeps the empty directory in Git; runtime `.json` files are ignored.
-6. There are no `import_batches` or `import_batch_rows` database tables.
-7. Commit receives only `preview_token`; the frontend does not upload the original workbook again.
-8. Failed-row state may be stored as temporary JSON using `error_file_token`; the error XLSX is reconstructed in memory and streamed directly.
-9. Templates, exports, and error XLSX binaries are generated in memory and streamed directly. They are not retained as files.
-10. Permanent import history is stored in `activity_logs`, not in temporary JSON.
-11. Every import commit has an `import_reference` UUID used as `activity_logs.correlation_id`.
-12. One import commit creates a summary `IMPORT` Activity Log and related entity actions use `source = IMPORT` plus the same `correlation_id`.
-13. Effective Asset updates performed by import store meaningful `old_values` and `new_values` and also append Asset History.
-14. Standard Asset import UPDATE must not bypass Transfer, Assignment/Return, or lifecycle history.
-
-Asset import pivot behavior:
-
-```text
-existing asset_number -> UPDATE
-new asset_number      -> CREATE preserving imported number
-blank asset_number    -> CREATE using active numbering configuration
-```
-
-For UPDATE, blank fields mean no change. Standard import UPDATE is limited to asset master/detail fields.
-
-# 70. Final Implementation Decisions — 07 Sep 2026
-
-```text
-Project name / app slug = asset
-Legacy app assetit      = planned inactive in PilarGroup
-Canonical user ID       = /auth/me.id (UUID string)
-internal_id             = not the authorization primary identifier
-Department ID           = integer
-Company ID              = string, e.g. comp-pnm-0001
-Bootstrap admins        = comma-separated user UUIDs via BOOTSTRAP_ADMIN_USER_IDS
-Import binary storage   = none
-Import preview storage  = temporary JSON only, TTL-based
-Import DB tables        = none
-Permanent import audit  = activity_logs + per-entity business/audit history
-```
-
-These decisions override earlier generic/open wording in this document where applicable.

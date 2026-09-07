@@ -12,7 +12,7 @@ async function log(req, event, conn) {
 async function list(req) {
   const db = requireDb();
   const { page, limit, offset } = parsePagination(req.query);
-  const scope = await PermissionService.buildScopeSql(req.user.id, 'ACTIVITY_LOG_VIEW', 'a', 'department_id_snapshot', 'company_id_snapshot');
+  const scope = await PermissionService.buildScopeSql(req.user, 'ACTIVITY_LOG_VIEW', 'a', 'department_id_snapshot', 'company_id_snapshot');
   const where = [scope.sql]; const params = [...scope.params];
   if (req.query.module) { where.push('a.module=?'); params.push(req.query.module); }
   if (req.query.action) { where.push('a.action=?'); params.push(req.query.action); }

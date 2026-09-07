@@ -126,3 +126,20 @@ CREATE TABLE IF NOT EXISTS asset_history (
   PRIMARY KEY (id), KEY idx_asset_history_asset (asset_id, event_date),
   CONSTRAINT fk_asset_history_asset FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS asset_external_references (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  asset_id BIGINT UNSIGNED NOT NULL,
+  source_system VARCHAR(80) NOT NULL COMMENT 'External system slug, e.g. ticket',
+  reference_type VARCHAR(80) NOT NULL COMMENT 'External reference type, e.g. TICKET',
+  reference_id VARCHAR(128) NOT NULL COMMENT 'Opaque id owned by the external system',
+  reference_number VARCHAR(150) NULL COMMENT 'Human-readable external number snapshot',
+  linked_by_user_id CHAR(36) NULL COMMENT 'Optional PilarGroup user UUID responsible for the link',
+  linked_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_asset_external_reference (asset_id, source_system, reference_type, reference_id),
+  KEY idx_asset_external_reference_asset (asset_id, linked_at),
+  KEY idx_asset_external_reference_source (source_system, reference_type, reference_id),
+  CONSTRAINT fk_asset_external_reference_asset FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

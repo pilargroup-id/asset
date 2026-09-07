@@ -1,3 +1,9 @@
+-- Asset consolidated schema
+-- Generated from migrations 001-006. Run migrations in order for deployment.
+
+-- ============================================================================
+-- 001_master_configuration.sql
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS master_brands (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   name VARCHAR(150) NOT NULL,
@@ -110,6 +116,10 @@ CREATE TABLE IF NOT EXISTS numbering_configs (
   PRIMARY KEY (id),
   KEY idx_numbering_lookup (managing_department_id, company_id, sequence_type, is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- 002_permissions.sql
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS master_permissions (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   code VARCHAR(100) NOT NULL,
@@ -118,22 +128,33 @@ CREATE TABLE IF NOT EXISTS master_permissions (
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (id), UNIQUE KEY uq_master_permissions_code (code)
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_master_permissions_code (code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS user_permissions (
+CREATE TABLE IF NOT EXISTS permission_assignments (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  user_id CHAR(36) NOT NULL COMMENT 'Central PilarGroup user UUID from auth/me.id; intentionally no FK',
   permission_id BIGINT UNSIGNED NOT NULL,
-  scope_type ENUM('GLOBAL','COMPANY','DEPARTMENT') NOT NULL,
-  company_id VARCHAR(64) NULL COMMENT 'Required when scope_type=COMPANY; optional context for DEPARTMENT',
-  department_id BIGINT UNSIGNED NULL COMMENT 'Required when scope_type=DEPARTMENT',
-  granted_by CHAR(36) NULL,
+  subject_type ENUM('USER','COMPANY','DEPARTMENT') NOT NULL COMMENT 'Who receives the permission',
+  subject_id VARCHAR(64) NOT NULL COMMENT 'USER=auth/me.id UUID, COMPANY=company id, DEPARTMENT=department id as string',
+  access_scope_type ENUM('GLOBAL','COMPANY','DEPARTMENT') NOT NULL COMMENT 'How broad the granted data access is',
+  access_scope_id VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'Empty for GLOBAL; company id for COMPANY; department id for DEPARTMENT',
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_by CHAR(36) NULL,
+  updated_by CHAR(36) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  KEY idx_user_permissions_user (user_id), KEY idx_user_permissions_scope (scope_type, company_id, department_id),
-  CONSTRAINT fk_user_permissions_permission FOREIGN KEY (permission_id) REFERENCES master_permissions(id) ON DELETE RESTRICT
+  UNIQUE KEY uq_permission_assignment (permission_id, subject_type, subject_id, access_scope_type, access_scope_id),
+  KEY idx_permission_assignments_subject (subject_type, subject_id, is_active),
+  KEY idx_permission_assignments_scope (access_scope_type, access_scope_id, is_active),
+  KEY idx_permission_assignments_permission (permission_id, is_active),
+  CONSTRAINT fk_permission_assignments_permission FOREIGN KEY (permission_id) REFERENCES master_permissions(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- 003_serialized_assets.sql
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS assets (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   asset_number VARCHAR(150) NOT NULL,
@@ -262,6 +283,27 @@ CREATE TABLE IF NOT EXISTS asset_history (
   PRIMARY KEY (id), KEY idx_asset_history_asset (asset_id, event_date),
   CONSTRAINT fk_asset_history_asset FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS asset_external_references (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  asset_id BIGINT UNSIGNED NOT NULL,
+  source_system VARCHAR(80) NOT NULL COMMENT 'External system slug, e.g. ticket',
+  reference_type VARCHAR(80) NOT NULL COMMENT 'External reference type, e.g. TICKET',
+  reference_id VARCHAR(128) NOT NULL COMMENT 'Opaque id owned by the external system',
+  reference_number VARCHAR(150) NULL COMMENT 'Human-readable external number snapshot',
+  linked_by_user_id CHAR(36) NULL COMMENT 'Optional PilarGroup user UUID responsible for the link',
+  linked_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_asset_external_reference (asset_id, source_system, reference_type, reference_id),
+  KEY idx_asset_external_reference_asset (asset_id, linked_at),
+  KEY idx_asset_external_reference_source (source_system, reference_type, reference_id),
+  CONSTRAINT fk_asset_external_reference_asset FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- 004_consumables.sql
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS consumables (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   consumable_code VARCHAR(150) NOT NULL,
@@ -324,6 +366,10 @@ CREATE TABLE IF NOT EXISTS consumable_stock_transactions (
   CONSTRAINT fk_consumable_tx_recipient_asset FOREIGN KEY (recipient_asset_id) REFERENCES assets(id) ON DELETE SET NULL,
   CONSTRAINT fk_consumable_tx_recipient_location FOREIGN KEY (recipient_location_id) REFERENCES master_locations(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- 005_depreciation.sql
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS depreciation_policies (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   managing_department_id BIGINT UNSIGNED NOT NULL,
@@ -400,22 +446,10 @@ CREATE TABLE IF NOT EXISTS asset_depreciation_ledger (
   PRIMARY KEY (id), UNIQUE KEY uq_asset_dep_period (asset_id, period_year, period_month), KEY idx_dep_ledger_period (period_year, period_month),
   CONSTRAINT fk_asset_dep_ledger_asset FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE IF NOT EXISTS export_history (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  export_number VARCHAR(100) NOT NULL,
-  export_type VARCHAR(80) NOT NULL,
-  format VARCHAR(20) NOT NULL DEFAULT 'XLSX',
-  filters JSON NULL,
-  scope_snapshot JSON NULL,
-  row_count INT UNSIGNED NOT NULL DEFAULT 0,
-  filename VARCHAR(255) NULL,
-  created_by CHAR(36) NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_export_history_number (export_number),
-  KEY idx_export_history_user (created_by, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ============================================================================
+-- 006_data_management_audit.sql
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS activity_logs (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id CHAR(36) NULL,
@@ -450,3 +484,4 @@ CREATE TABLE IF NOT EXISTS activity_logs (
   KEY idx_activity_logs_correlation (correlation_id, created_at),
   KEY idx_activity_logs_source (source, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

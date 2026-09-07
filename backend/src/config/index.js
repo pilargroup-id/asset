@@ -43,6 +43,9 @@ const config = {
     basePath: process.env.PILARGROUP_DIRECTORY_BASE_PATH || '/api/internal/directory',
     timeoutMs: numberEnv('DIRECTORY_TIMEOUT_MS', 10000),
   },
+  internalApi: {
+    secret: process.env.INTERNAL_API_SECRET || '',
+  },
   cors: { origin: process.env.CORS_ORIGIN || 'http://localhost:5173' },
   db: {
     host: process.env.DB_HOST || '127.0.0.1',

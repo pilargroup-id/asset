@@ -1,1 +1,11 @@
-const r=require('express').Router();const C=require('../controllers/permission.controller');const {requirePermission}=require('../middleware/permission.middleware');r.get('/',requirePermission('PERMISSION_MANAGE'),C.list);r.get('/users/:userId',requirePermission('PERMISSION_MANAGE'),C.user);r.post('/grants',requirePermission('PERMISSION_MANAGE'),C.grant);r.delete('/grants/:id',requirePermission('PERMISSION_MANAGE'),C.revoke);module.exports=r;
+const router = require('express').Router();
+const Controller = require('../controllers/permission.controller');
+const { requirePermission } = require('../middleware/permission.middleware');
+
+router.get('/effective', Controller.effective);
+router.get('/', requirePermission('PERMISSION_MANAGE'), Controller.listPermissions);
+router.get('/assignments', requirePermission('PERMISSION_MANAGE'), Controller.listAssignments);
+router.post('/assignments', requirePermission('PERMISSION_MANAGE'), Controller.grant);
+router.delete('/assignments/:id', requirePermission('PERMISSION_MANAGE'), Controller.revoke);
+
+module.exports = router;

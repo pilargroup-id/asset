@@ -1,19 +1,3 @@
-CREATE TABLE IF NOT EXISTS export_history (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  export_number VARCHAR(100) NOT NULL,
-  export_type VARCHAR(80) NOT NULL,
-  format VARCHAR(20) NOT NULL DEFAULT 'XLSX',
-  filters JSON NULL,
-  scope_snapshot JSON NULL,
-  row_count INT UNSIGNED NOT NULL DEFAULT 0,
-  filename VARCHAR(255) NULL,
-  created_by CHAR(36) NOT NULL,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (id),
-  UNIQUE KEY uq_export_history_number (export_number),
-  KEY idx_export_history_user (created_by, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 CREATE TABLE IF NOT EXISTS activity_logs (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id CHAR(36) NULL,

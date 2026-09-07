@@ -1,6 +1,7 @@
 const express=require('express');const config=require('../config');const {authenticate,requireApp}=require('../middleware/auth.middleware');
 const router=express.Router();
 router.use('/auth',require('./auth.routes'));
+router.use('/internal',require('./internal.routes'));
 router.use(authenticate,requireApp(config.app.slug));
 router.use('/dashboard',require('./dashboard.routes'));
 router.use('/directory',require('./directory.routes'));
