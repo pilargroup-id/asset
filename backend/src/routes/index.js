@@ -1,0 +1,16 @@
+const express=require('express');const config=require('../config');const {authenticate,requireApp}=require('../middleware/auth.middleware');
+const router=express.Router();
+router.use('/auth',require('./auth.routes'));
+router.use(authenticate,requireApp(config.app.slug));
+router.use('/dashboard',require('./dashboard.routes'));
+router.use('/directory',require('./directory.routes'));
+router.use('/master',require('./master.routes'));
+router.use('/permissions',require('./permission.routes'));
+router.use('/numbering',require('./numbering.routes'));
+router.use('/assets',require('./asset.routes'));
+router.use('/consumables',require('./consumable.routes'));
+router.use('/depreciation',require('./depreciation.routes'));
+router.use('/import',require('./import.routes'));
+router.use('/export',require('./export.routes'));
+router.use('/activity-logs',require('./activity-log.routes'));
+module.exports=router;

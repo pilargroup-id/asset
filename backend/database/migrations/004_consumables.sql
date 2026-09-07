@@ -1,0 +1,62 @@
+CREATE TABLE IF NOT EXISTS consumables (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  consumable_code VARCHAR(150) NOT NULL,
+  name VARCHAR(200) NOT NULL,
+  category_id BIGINT UNSIGNED NOT NULL,
+  brand_id BIGINT UNSIGNED NULL,
+  variant VARCHAR(180) NULL,
+  uom_id BIGINT UNSIGNED NOT NULL,
+  managing_department_id BIGINT UNSIGNED NOT NULL,
+  company_id VARCHAR(64) NOT NULL,
+  minimum_stock DECIMAL(18,4) NOT NULL DEFAULT 0,
+  notes TEXT NULL,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  created_by CHAR(36) NULL,
+  updated_by CHAR(36) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id), UNIQUE KEY uq_consumables_code (consumable_code), KEY idx_consumables_scope (managing_department_id, company_id), KEY idx_consumables_category (category_id),
+  CONSTRAINT fk_consumables_category FOREIGN KEY (category_id) REFERENCES master_categories(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_consumables_brand FOREIGN KEY (brand_id) REFERENCES master_brands(id) ON DELETE SET NULL,
+  CONSTRAINT fk_consumables_uom FOREIGN KEY (uom_id) REFERENCES master_uoms(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS consumable_stock_balances (
+  consumable_id BIGINT UNSIGNED NOT NULL,
+  location_id BIGINT UNSIGNED NOT NULL,
+  quantity DECIMAL(18,4) NOT NULL DEFAULT 0,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (consumable_id, location_id),
+  CONSTRAINT fk_consumable_balances_consumable FOREIGN KEY (consumable_id) REFERENCES consumables(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_consumable_balances_location FOREIGN KEY (location_id) REFERENCES master_locations(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS consumable_stock_transactions (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  transaction_number VARCHAR(150) NOT NULL,
+  consumable_id BIGINT UNSIGNED NOT NULL,
+  movement_type ENUM('OPENING_BALANCE','RECEIVE','ISSUE','TRANSFER','ADJUSTMENT','WRITE_OFF','RETURN') NOT NULL,
+  from_location_id BIGINT UNSIGNED NULL,
+  to_location_id BIGINT UNSIGNED NULL,
+  quantity DECIMAL(18,4) NOT NULL,
+  unit_cost DECIMAL(18,4) NULL,
+  recipient_type ENUM('USER','DEPARTMENT','ASSET','LOCATION','GENERAL_USAGE') NULL,
+  recipient_user_id CHAR(36) NULL,
+  recipient_user_name_snapshot VARCHAR(180) NULL,
+  recipient_department_id BIGINT UNSIGNED NULL,
+  recipient_department_name_snapshot VARCHAR(180) NULL,
+  recipient_asset_id BIGINT UNSIGNED NULL,
+  recipient_location_id BIGINT UNSIGNED NULL,
+  purpose VARCHAR(255) NULL,
+  reference_number VARCHAR(150) NULL,
+  notes TEXT NULL,
+  transaction_date DATETIME NOT NULL,
+  created_by CHAR(36) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id), UNIQUE KEY uq_consumable_tx_number (transaction_number), KEY idx_consumable_tx_consumable (consumable_id, transaction_date), KEY idx_consumable_tx_type (movement_type), KEY idx_consumable_tx_recipient_user (recipient_user_id),
+  CONSTRAINT fk_consumable_tx_consumable FOREIGN KEY (consumable_id) REFERENCES consumables(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_consumable_tx_from_location FOREIGN KEY (from_location_id) REFERENCES master_locations(id) ON DELETE SET NULL,
+  CONSTRAINT fk_consumable_tx_to_location FOREIGN KEY (to_location_id) REFERENCES master_locations(id) ON DELETE SET NULL,
+  CONSTRAINT fk_consumable_tx_recipient_asset FOREIGN KEY (recipient_asset_id) REFERENCES assets(id) ON DELETE SET NULL,
+  CONSTRAINT fk_consumable_tx_recipient_location FOREIGN KEY (recipient_location_id) REFERENCES master_locations(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

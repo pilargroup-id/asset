@@ -1,0 +1,18 @@
+node_modules/
+.env
+.env.*
+!.env.example
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
+dist/
+build/
+.DS_Store
+Thumbs.db
+*.log
+
+# Import preview state is temporary JSON only. Keep the directory, ignore runtime records.
+storage/import-previews/*
+!storage/import-previews/.gitkeep

@@ -1,0 +1,1 @@
+const r=require('express').Router();const C=require('../controllers/dashboard.controller');const {requirePermission}=require('../middleware/permission.middleware');r.get('/',requirePermission('DASHBOARD_VIEW'),C.get);module.exports=r;

@@ -1,0 +1,6 @@
+const R=require('../utils/response.util');const P=require('../services/permission.service');const A=require('../services/activity-log.service');const { ACTIVITY_ACTIONS }=require('../constants/activity.constants');
+async function list(req,res,next){try{return R.ok(res,await P.listPermissions(),'Permissions loaded');}catch(e){next(e);}}
+async function user(req,res,next){try{return R.ok(res,await P.listManageableUserPermissions(req.user.id,req.params.userId),'User permissions loaded');}catch(e){next(e);}}
+async function grant(req,res,next){try{const row=await P.grantPermission(req.user.id,req.body);await A.log(req,{module:'PERMISSION',action:ACTIVITY_ACTIONS.PERMISSION_GRANT,entity_type:'USER_PERMISSION',entity_id:row.id,entity_reference:String(row.user_id),new_values:row,description:`Granted ${row.permission_code} to user ${row.user_id}`});return R.created(res,row,'Permission granted');}catch(e){next(e);}}
+async function revoke(req,res,next){try{const row=await P.revokePermission(req.user.id,req.params.id);await A.log(req,{module:'PERMISSION',action:ACTIVITY_ACTIONS.PERMISSION_REVOKE,entity_type:'USER_PERMISSION',entity_id:row.id,entity_reference:String(row.user_id),old_values:row,description:`Revoked ${row.permission_code} from user ${row.user_id}`});return R.ok(res,row,'Permission revoked');}catch(e){next(e);}}
+module.exports={list,user,grant,revoke};

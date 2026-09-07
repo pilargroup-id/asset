@@ -1,0 +1,2 @@
+const r=require('express').Router();const C=require('../controllers/consumable.controller');const {requirePermission}=require('../middleware/permission.middleware');
+r.get('/',requirePermission('CONSUMABLE_VIEW'),C.list);r.post('/',requirePermission('CONSUMABLE_MANAGE'),C.create);r.get('/:id/history',requirePermission('CONSUMABLE_VIEW'),C.history);r.post('/:id/movements',requirePermission('CONSUMABLE_VIEW'),C.move);r.get('/:id',requirePermission('CONSUMABLE_VIEW'),C.get);r.put('/:id',requirePermission('CONSUMABLE_MANAGE'),C.update);module.exports=r;

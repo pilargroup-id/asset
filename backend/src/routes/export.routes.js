@@ -1,0 +1,1 @@
+const r=require('express').Router();const C=require('../controllers/export.controller');const {requirePermission}=require('../middleware/permission.middleware');r.get('/:type',requirePermission('EXPORT_DATA'),C.generate);module.exports=r;

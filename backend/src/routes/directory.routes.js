@@ -1,0 +1,1 @@
+const r=require('express').Router();const C=require('../controllers/directory.controller');const {requirePermission}=require('../middleware/permission.middleware');r.get('/users',requirePermission('DIRECTORY_VIEW'),C.users);r.get('/departments',requirePermission('DIRECTORY_VIEW'),C.departments);r.get('/companies',requirePermission('DIRECTORY_VIEW'),C.companies);module.exports=r;

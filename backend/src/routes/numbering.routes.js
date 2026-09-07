@@ -1,0 +1,1 @@
+const r=require('express').Router();const C=require('../controllers/numbering.controller');const {requirePermission}=require('../middleware/permission.middleware');r.get('/',requirePermission('NUMBERING_MANAGE'),C.list);r.post('/',requirePermission('NUMBERING_MANAGE'),C.create);r.put('/:id',requirePermission('NUMBERING_MANAGE'),C.update);module.exports=r;

@@ -1,0 +1,128 @@
+CREATE TABLE IF NOT EXISTS assets (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  asset_number VARCHAR(150) NOT NULL,
+  asset_name VARCHAR(200) NOT NULL,
+  category_id BIGINT UNSIGNED NOT NULL,
+  brand_id BIGINT UNSIGNED NULL,
+  model_id BIGINT UNSIGNED NULL,
+  serial_number VARCHAR(180) NULL,
+  managing_department_id BIGINT UNSIGNED NOT NULL COMMENT 'Central PilarGroup department id',
+  company_id VARCHAR(64) NOT NULL COMMENT 'Central PilarGroup company id string',
+  current_location_id BIGINT UNSIGNED NULL,
+  status ENUM('REGISTERED','AVAILABLE','ASSIGNED','MAINTENANCE','LOST','RETIRED','DISPOSED','VOID') NOT NULL DEFAULT 'REGISTERED',
+  asset_condition ENUM('NEW','GOOD','FAIR','POOR','DAMAGED') NOT NULL DEFAULT 'GOOD',
+  purchase_date DATE NULL,
+  purchase_cost DECIMAL(18,2) NULL,
+  vendor_id BIGINT UNSIGNED NULL,
+  warranty_until DATE NULL,
+  current_assignment_id BIGINT UNSIGNED NULL,
+  notes TEXT NULL,
+  created_by CHAR(36) NULL,
+  updated_by CHAR(36) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id), UNIQUE KEY uq_assets_asset_number (asset_number), KEY idx_assets_scope (managing_department_id, company_id), KEY idx_assets_status (status), KEY idx_assets_category (category_id), KEY idx_assets_location (current_location_id), KEY idx_assets_serial (serial_number),
+  CONSTRAINT fk_assets_category FOREIGN KEY (category_id) REFERENCES master_categories(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_assets_brand FOREIGN KEY (brand_id) REFERENCES master_brands(id) ON DELETE SET NULL,
+  CONSTRAINT fk_assets_model FOREIGN KEY (model_id) REFERENCES master_models(id) ON DELETE SET NULL,
+  CONSTRAINT fk_assets_location FOREIGN KEY (current_location_id) REFERENCES master_locations(id) ON DELETE SET NULL,
+  CONSTRAINT fk_assets_vendor FOREIGN KEY (vendor_id) REFERENCES master_vendors(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS asset_attribute_values (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  asset_id BIGINT UNSIGNED NOT NULL,
+  attribute_id BIGINT UNSIGNED NOT NULL,
+  value_text TEXT NULL,
+  value_number DECIMAL(24,6) NULL,
+  value_date DATE NULL,
+  value_boolean TINYINT(1) NULL,
+  value_json JSON NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id), UNIQUE KEY uq_asset_attribute_value (asset_id, attribute_id),
+  CONSTRAINT fk_asset_attribute_values_asset FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE,
+  CONSTRAINT fk_asset_attribute_values_attribute FOREIGN KEY (attribute_id) REFERENCES master_category_attributes(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS asset_assignments (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  asset_id BIGINT UNSIGNED NOT NULL,
+  assignment_type ENUM('USER','DEPARTMENT','LOCATION','SHARED_POOL') NOT NULL,
+  assigned_user_id CHAR(36) NULL,
+  assigned_user_name_snapshot VARCHAR(180) NULL,
+  assigned_department_id BIGINT UNSIGNED NULL,
+  assigned_department_name_snapshot VARCHAR(180) NULL,
+  assigned_location_id BIGINT UNSIGNED NULL,
+  assigned_location_name_snapshot VARCHAR(180) NULL,
+  purpose VARCHAR(255) NULL,
+  assigned_at DATETIME NOT NULL,
+  assigned_by CHAR(36) NOT NULL,
+  returned_at DATETIME NULL,
+  returned_by CHAR(36) NULL,
+  return_condition ENUM('NEW','GOOD','FAIR','POOR','DAMAGED') NULL,
+  return_location_id BIGINT UNSIGNED NULL,
+  return_note TEXT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id), KEY idx_asset_assignments_asset (asset_id, assigned_at), KEY idx_asset_assignments_user (assigned_user_id),
+  CONSTRAINT fk_asset_assignments_asset FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_asset_assignments_location FOREIGN KEY (assigned_location_id) REFERENCES master_locations(id) ON DELETE SET NULL,
+  CONSTRAINT fk_asset_assignments_return_location FOREIGN KEY (return_location_id) REFERENCES master_locations(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+CREATE TABLE IF NOT EXISTS asset_transfers (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  asset_id BIGINT UNSIGNED NOT NULL,
+  transfer_date DATETIME NOT NULL,
+  from_location_id BIGINT UNSIGNED NULL,
+  to_location_id BIGINT UNSIGNED NULL,
+  from_company_id VARCHAR(64) NULL,
+  to_company_id VARCHAR(64) NULL,
+  from_managing_department_id BIGINT UNSIGNED NULL,
+  to_managing_department_id BIGINT UNSIGNED NULL,
+  reason VARCHAR(255) NULL,
+  notes TEXT NULL,
+  transferred_by CHAR(36) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id), KEY idx_asset_transfers_asset (asset_id, transfer_date),
+  CONSTRAINT fk_asset_transfers_asset FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_asset_transfers_from_location FOREIGN KEY (from_location_id) REFERENCES master_locations(id) ON DELETE SET NULL,
+  CONSTRAINT fk_asset_transfers_to_location FOREIGN KEY (to_location_id) REFERENCES master_locations(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS asset_maintenances (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  asset_id BIGINT UNSIGNED NOT NULL,
+  maintenance_type VARCHAR(100) NOT NULL,
+  vendor_id BIGINT UNSIGNED NULL,
+  start_date DATETIME NOT NULL,
+  completion_date DATETIME NULL,
+  cost DECIMAL(18,2) NULL,
+  problem_description TEXT NULL,
+  result TEXT NULL,
+  status ENUM('OPEN','IN_PROGRESS','COMPLETED','CANCELED') NOT NULL DEFAULT 'OPEN',
+  notes TEXT NULL,
+  created_by CHAR(36) NOT NULL,
+  completed_by CHAR(36) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id), KEY idx_asset_maintenances_asset (asset_id, status),
+  CONSTRAINT fk_asset_maintenances_asset FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_asset_maintenances_vendor FOREIGN KEY (vendor_id) REFERENCES master_vendors(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS asset_history (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  asset_id BIGINT UNSIGNED NOT NULL,
+  event_type VARCHAR(80) NOT NULL,
+  event_date DATETIME NOT NULL,
+  reference_type VARCHAR(80) NULL,
+  reference_id BIGINT UNSIGNED NULL,
+  description VARCHAR(500) NULL,
+  details JSON NULL,
+  performed_by CHAR(36) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id), KEY idx_asset_history_asset (asset_id, event_date),
+  CONSTRAINT fk_asset_history_asset FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

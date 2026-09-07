@@ -1,0 +1,1 @@
+const r=require('express').Router();const C=require('../controllers/activity-log.controller');const {requirePermission}=require('../middleware/permission.middleware');r.get('/',requirePermission('ACTIVITY_LOG_VIEW'),C.list);module.exports=r;

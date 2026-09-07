@@ -1,0 +1,5 @@
+const R=require('../utils/response.util');const N=require('../services/numbering.service');const A=require('../services/activity-log.service');const { ACTIVITY_ACTIONS }=require('../constants/activity.constants');
+async function list(req,res,next){try{return R.ok(res,await N.list(req),'Numbering configurations loaded');}catch(e){next(e);}}
+async function create(req,res,next){try{const id=await N.create(req);const row=await N.get(id);await A.log(req,{module:'NUMBERING',action:ACTIVITY_ACTIONS.CREATE,entity_type:'NUMBERING_CONFIG',entity_id:id,entity_name_snapshot:row.name,new_values:row,description:`Created numbering config ${row.name}`});return R.created(res,row,'Numbering configuration created');}catch(e){next(e);}}
+async function update(req,res,next){try{const old=await N.get(req.params.id);const row=await N.update(req);await A.log(req,{module:'NUMBERING',action:ACTIVITY_ACTIONS.UPDATE,entity_type:'NUMBERING_CONFIG',entity_id:row.id,entity_name_snapshot:row.name,old_values:old,new_values:row,description:`Updated numbering config ${row.name}`});return R.ok(res,row,'Numbering configuration updated');}catch(e){next(e);}}
+module.exports={list,create,update};
