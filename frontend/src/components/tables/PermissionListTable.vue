@@ -60,7 +60,7 @@
       </td>
     </tr>
     <tr
-      v-for="permission in filteredPermissions"
+      v-for="permission in paginatedPermissions"
       v-else
       :key="permission.id"
       class="border-t border-gray-100 dark:border-gray-800"
@@ -82,21 +82,36 @@
         </Badge>
       </td>
     </tr>
+
+    <template #pagination>
+      <TablePagination
+        :page="page"
+        :limit="limit"
+        :total="filteredPermissions.length"
+        :total-pages="totalPages"
+        :disabled="isLoading"
+        item-label="permissions"
+        @update:page="(value) => (page = value)"
+      />
+    </template>
   </BaseTable>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { getPermissions } from '@/service/axios'
 import Badge from '@/components/ui/Badge.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import TableHeadCell from '@/components/tables/TableHeadCell.vue'
+import TablePagination from '@/components/tables/TablePagination.vue'
 import { RefreshIcon } from '@/icons'
 
 const permissions = ref([])
 const isLoading = ref(false)
 const errorMessage = ref('')
 const search = ref('')
+const page = ref(1)
+const limit = 25
 
 const filteredPermissions = computed(() => {
   const term = search.value.trim().toLowerCase()
@@ -106,6 +121,21 @@ const filteredPermissions = computed(() => {
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(term))
   )
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredPermissions.value.length / limit)))
+
+const paginatedPermissions = computed(() => {
+  const start = (page.value - 1) * limit
+  return filteredPermissions.value.slice(start, start + limit)
+})
+
+watch(search, () => {
+  page.value = 1
+})
+
+watch(totalPages, (value) => {
+  if (page.value > value) page.value = value
 })
 
 async function fetchPermissions() {

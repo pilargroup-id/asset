@@ -114,6 +114,101 @@ export async function updateAsset(id: number | string, payload: UpdateAssetPaylo
   return data
 }
 
+export interface ConsumableListParams {
+  page?: number
+  limit?: number
+  search?: string
+  category_id?: number | string
+  is_active?: number | boolean
+}
+
+export interface ConsumableListMeta {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+export interface ConsumableRecord {
+  id: number
+  consumable_code: string
+  name: string
+  category_id: number
+  category_name?: string
+  brand_id?: number | string | null
+  brand_name?: string | null
+  variant?: string | null
+  uom_id: number
+  uom_code?: string
+  uom_name?: string
+  managing_department_id: string
+  company_id: string
+  minimum_stock: number | string
+  total_stock?: number | string
+  notes?: string | null
+  is_active?: number | boolean
+  [key: string]: unknown
+}
+
+export interface ConsumableListResponse {
+  success: boolean
+  message: string
+  data: ConsumableRecord[]
+  meta: ConsumableListMeta
+}
+
+// GET /api/consumables
+export async function getConsumables(params: ConsumableListParams = {}): Promise<ConsumableListResponse> {
+  const { data } = await api.get<ConsumableListResponse>('/consumables', { params })
+  return data
+}
+
+export interface CreateConsumablePayload {
+  name: string
+  category_id: number | string
+  uom_id: number | string
+  managing_department_id: number | string
+  company_id: string
+  consumable_code?: string
+  brand_id?: number | string
+  variant?: string
+  minimum_stock?: number
+  notes?: string
+  is_active?: boolean
+}
+
+export interface ConsumableResponse {
+  success: boolean
+  message: string
+  data: ConsumableRecord
+}
+
+// POST /api/consumables
+export async function createConsumable(payload: CreateConsumablePayload): Promise<ConsumableResponse> {
+  const { data } = await api.post<ConsumableResponse>('/consumables', payload)
+  return data
+}
+
+export interface UpdateConsumablePayload {
+  name?: string
+  category_id?: number | string
+  brand_id?: number | string
+  variant?: string
+  uom_id?: number | string
+  minimum_stock?: number
+  notes?: string
+  is_active?: boolean
+}
+
+// PUT /api/consumables/:id
+export async function updateConsumable(
+  id: number | string,
+  payload: UpdateConsumablePayload
+): Promise<ConsumableResponse> {
+  const { data } = await api.put<ConsumableResponse>(`/consumables/${id}`, payload)
+  return data
+}
+
 export interface MasterDataRecord {
   id: number | string
   code?: string | null
@@ -139,6 +234,31 @@ export async function getMasterData(
   params: Record<string, unknown> = {}
 ): Promise<MasterDataListResponse> {
   const { data } = await api.get<MasterDataListResponse>(`/master/${type}`, { params })
+  return data
+}
+
+export interface MasterDataResponse {
+  success: boolean
+  message: string
+  data: MasterDataRecord
+}
+
+// POST /api/master/:type
+export async function createMasterData(
+  type: string,
+  payload: Record<string, unknown>
+): Promise<MasterDataResponse> {
+  const { data } = await api.post<MasterDataResponse>(`/master/${type}`, payload)
+  return data
+}
+
+// PUT /api/master/:type/:id
+export async function updateMasterData(
+  type: string,
+  id: number | string,
+  payload: Record<string, unknown>
+): Promise<MasterDataResponse> {
+  const { data } = await api.put<MasterDataResponse>(`/master/${type}/${id}`, payload)
   return data
 }
 
@@ -172,6 +292,29 @@ export async function getNumberingConfigs(
   params: Record<string, unknown> = {}
 ): Promise<NumberingConfigListResponse> {
   const { data } = await api.get<NumberingConfigListResponse>('/numbering', { params })
+  return data
+}
+
+export interface NumberingConfigResponse {
+  success: boolean
+  message: string
+  data: NumberingConfigRecord
+}
+
+// POST /api/numbering
+export async function createNumberingConfig(
+  payload: Record<string, unknown>
+): Promise<NumberingConfigResponse> {
+  const { data } = await api.post<NumberingConfigResponse>('/numbering', payload)
+  return data
+}
+
+// PUT /api/numbering/:id
+export async function updateNumberingConfig(
+  id: number | string,
+  payload: Record<string, unknown>
+): Promise<NumberingConfigResponse> {
+  const { data } = await api.put<NumberingConfigResponse>(`/numbering/${id}`, payload)
   return data
 }
 
@@ -290,5 +433,40 @@ export async function getDirectoryDepartments(params: Record<string, unknown> = 
 // GET /api/directory/companies
 export async function getDirectoryCompanies(params: Record<string, unknown> = {}): Promise<DirectoryListResponse> {
   const { data } = await api.get<DirectoryListResponse>('/directory/companies', { params })
+  return data
+}
+
+export interface DashboardAssetSummary {
+  total: number
+  by_status: Record<string, number>
+}
+
+export interface DashboardLowStockItem {
+  id: number
+  consumable_code: string
+  name: string
+  minimum_stock: number | string
+  total_stock: number | string
+}
+
+export interface DashboardConsumableSummary {
+  total_masters: number
+  low_stock: DashboardLowStockItem[]
+}
+
+export interface DashboardData {
+  assets: DashboardAssetSummary | null
+  consumables: DashboardConsumableSummary | null
+}
+
+export interface DashboardResponse {
+  success: boolean
+  message: string
+  data: DashboardData
+}
+
+// GET /api/dashboard
+export async function getDashboard(): Promise<DashboardResponse> {
+  const { data } = await api.get<DashboardResponse>('/dashboard')
   return data
 }

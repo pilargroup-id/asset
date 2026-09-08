@@ -27,39 +27,43 @@
         />
       </div>
 
-      <button
-        @click="fetchBrands"
-        :disabled="isLoading"
-        class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
-      >
-        <RefreshIcon :class="['h-4 w-4', { 'animate-spin': isLoading }]" />
-        Refresh
-      </button>
+      <div class="flex items-center gap-3">
+        <button
+          @click="fetchBrands"
+          :disabled="isLoading"
+          class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+        >
+          <RefreshIcon :class="['h-4 w-4', { 'animate-spin': isLoading }]" />
+          Refresh
+        </button>
+        <ButtonCreateBrand @created="fetchBrands" />
+      </div>
     </template>
 
     <template #head>
       <TableHeadCell>Code</TableHeadCell>
       <TableHeadCell>Name</TableHeadCell>
       <TableHeadCell>Status</TableHeadCell>
+      <TableHeadCell>Actions</TableHeadCell>
     </template>
 
     <tr v-if="isLoading">
-      <td colspan="3" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="4" class="px-5 py-10 text-center sm:px-6">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">Loading brands...</p>
       </td>
     </tr>
     <tr v-else-if="errorMessage">
-      <td colspan="3" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="4" class="px-5 py-10 text-center sm:px-6">
         <p class="text-error-600 text-theme-sm dark:text-error-500">{{ errorMessage }}</p>
       </td>
     </tr>
     <tr v-else-if="!filteredBrands.length">
-      <td colspan="3" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="4" class="px-5 py-10 text-center sm:px-6">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">No brands found.</p>
       </td>
     </tr>
     <tr
-      v-for="brand in filteredBrands"
+      v-for="brand in paginatedBrands"
       v-else
       :key="brand.id"
       class="border-t border-gray-100 dark:border-gray-800"
@@ -77,22 +81,42 @@
           {{ brand.is_active ? 'Active' : 'Inactive' }}
         </Badge>
       </td>
+      <td class="px-5 py-4 sm:px-6">
+        <ButtonUpdateBrand :brand="brand" @updated="fetchBrands" />
+      </td>
     </tr>
+
+    <template #pagination>
+      <TablePagination
+        :page="page"
+        :limit="limit"
+        :total="filteredBrands.length"
+        :total-pages="totalPages"
+        :disabled="isLoading"
+        item-label="brands"
+        @update:page="(value) => (page = value)"
+      />
+    </template>
   </BaseTable>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { getMasterData } from '@/service/axios'
 import Badge from '@/components/ui/Badge.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import TableHeadCell from '@/components/tables/TableHeadCell.vue'
+import TablePagination from '@/components/tables/TablePagination.vue'
+import ButtonCreateBrand from '@/components/buttons/create/ButtonCreateBrand.vue'
+import ButtonUpdateBrand from '@/components/buttons/update/ButtonUpdateBrand.vue'
 import { RefreshIcon } from '@/icons'
 
 const brands = ref([])
 const isLoading = ref(false)
 const errorMessage = ref('')
 const search = ref('')
+const page = ref(1)
+const limit = 25
 
 const filteredBrands = computed(() => {
   const term = search.value.trim().toLowerCase()
@@ -102,6 +126,21 @@ const filteredBrands = computed(() => {
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(term))
   )
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredBrands.value.length / limit)))
+
+const paginatedBrands = computed(() => {
+  const start = (page.value - 1) * limit
+  return filteredBrands.value.slice(start, start + limit)
+})
+
+watch(search, () => {
+  page.value = 1
+})
+
+watch(totalPages, (value) => {
+  if (page.value > value) page.value = value
 })
 
 async function fetchBrands() {

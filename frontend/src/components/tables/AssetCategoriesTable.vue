@@ -27,14 +27,17 @@
         />
       </div>
 
-      <button
-        @click="fetchCategories"
-        :disabled="isLoading"
-        class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
-      >
-        <RefreshIcon :class="['h-4 w-4', { 'animate-spin': isLoading }]" />
-        Refresh
-      </button>
+      <div class="flex items-center gap-3">
+        <button
+          @click="fetchCategories"
+          :disabled="isLoading"
+          class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+        >
+          <RefreshIcon :class="['h-4 w-4', { 'animate-spin': isLoading }]" />
+          Refresh
+        </button>
+        <ButtonCreateAssetCategory @created="fetchCategories" />
+      </div>
     </template>
 
     <template #head>
@@ -43,25 +46,26 @@
       <TableHeadCell>Tracking Type</TableHeadCell>
       <TableHeadCell>Depreciable</TableHeadCell>
       <TableHeadCell>Status</TableHeadCell>
+      <TableHeadCell>Actions</TableHeadCell>
     </template>
 
     <tr v-if="isLoading">
-      <td colspan="5" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="6" class="px-5 py-10 text-center sm:px-6">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">Loading asset categories...</p>
       </td>
     </tr>
     <tr v-else-if="errorMessage">
-      <td colspan="5" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="6" class="px-5 py-10 text-center sm:px-6">
         <p class="text-error-600 text-theme-sm dark:text-error-500">{{ errorMessage }}</p>
       </td>
     </tr>
     <tr v-else-if="!filteredCategories.length">
-      <td colspan="5" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="6" class="px-5 py-10 text-center sm:px-6">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">No asset categories found.</p>
       </td>
     </tr>
     <tr
-      v-for="category in filteredCategories"
+      v-for="category in paginatedCategories"
       v-else
       :key="category.id"
       class="border-t border-gray-100 dark:border-gray-800"
@@ -87,22 +91,42 @@
           {{ category.is_active ? 'Active' : 'Inactive' }}
         </Badge>
       </td>
+      <td class="px-5 py-4 sm:px-6">
+        <ButtonUpdateAssetCategory :category="category" @updated="fetchCategories" />
+      </td>
     </tr>
+
+    <template #pagination>
+      <TablePagination
+        :page="page"
+        :limit="limit"
+        :total="filteredCategories.length"
+        :total-pages="totalPages"
+        :disabled="isLoading"
+        item-label="categories"
+        @update:page="(value) => (page = value)"
+      />
+    </template>
   </BaseTable>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { getMasterData } from '@/service/axios'
 import Badge from '@/components/ui/Badge.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import TableHeadCell from '@/components/tables/TableHeadCell.vue'
+import TablePagination from '@/components/tables/TablePagination.vue'
+import ButtonCreateAssetCategory from '@/components/buttons/create/ButtonCreateAssetCategory.vue'
+import ButtonUpdateAssetCategory from '@/components/buttons/update/ButtonUpdateAssetCategory.vue'
 import { RefreshIcon } from '@/icons'
 
 const categories = ref([])
 const isLoading = ref(false)
 const errorMessage = ref('')
 const search = ref('')
+const page = ref(1)
+const limit = 25
 
 const filteredCategories = computed(() => {
   const term = search.value.trim().toLowerCase()
@@ -112,6 +136,21 @@ const filteredCategories = computed(() => {
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(term))
   )
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredCategories.value.length / limit)))
+
+const paginatedCategories = computed(() => {
+  const start = (page.value - 1) * limit
+  return filteredCategories.value.slice(start, start + limit)
+})
+
+watch(search, () => {
+  page.value = 1
+})
+
+watch(totalPages, (value) => {
+  if (page.value > value) page.value = value
 })
 
 async function fetchCategories() {

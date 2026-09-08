@@ -2,7 +2,7 @@
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div class="space-y-5 sm:space-y-6">
-      <ComponentCard title="Locations" desc="Browse configured asset locations.">
+      <ComponentCard>
         <LocationsTable />
       </ComponentCard>
     </div>

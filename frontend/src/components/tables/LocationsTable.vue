@@ -27,14 +27,17 @@
         />
       </div>
 
-      <button
-        @click="fetchLocations"
-        :disabled="isLoading"
-        class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
-      >
-        <RefreshIcon :class="['h-4 w-4', { 'animate-spin': isLoading }]" />
-        Refresh
-      </button>
+      <div class="flex items-center gap-3">
+        <button
+          @click="fetchLocations"
+          :disabled="isLoading"
+          class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
+        >
+          <RefreshIcon :class="['h-4 w-4', { 'animate-spin': isLoading }]" />
+          Refresh
+        </button>
+        <ButtonCreateLocation @created="fetchLocations" />
+      </div>
     </template>
 
     <template #head>
@@ -43,25 +46,26 @@
       <TableHeadCell>Type</TableHeadCell>
       <TableHeadCell>Parent ID</TableHeadCell>
       <TableHeadCell>Status</TableHeadCell>
+      <TableHeadCell>Actions</TableHeadCell>
     </template>
 
     <tr v-if="isLoading">
-      <td colspan="5" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="6" class="px-5 py-10 text-center sm:px-6">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">Loading locations...</p>
       </td>
     </tr>
     <tr v-else-if="errorMessage">
-      <td colspan="5" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="6" class="px-5 py-10 text-center sm:px-6">
         <p class="text-error-600 text-theme-sm dark:text-error-500">{{ errorMessage }}</p>
       </td>
     </tr>
     <tr v-else-if="!filteredLocations.length">
-      <td colspan="5" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="6" class="px-5 py-10 text-center sm:px-6">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">No locations found.</p>
       </td>
     </tr>
     <tr
-      v-for="location in filteredLocations"
+      v-for="location in paginatedLocations"
       v-else
       :key="location.id"
       class="border-t border-gray-100 dark:border-gray-800"
@@ -85,22 +89,42 @@
           {{ location.is_active ? 'Active' : 'Inactive' }}
         </Badge>
       </td>
+      <td class="px-5 py-4 sm:px-6">
+        <ButtonUpdateLocation :location="location" @updated="fetchLocations" />
+      </td>
     </tr>
+
+    <template #pagination>
+      <TablePagination
+        :page="page"
+        :limit="limit"
+        :total="filteredLocations.length"
+        :total-pages="totalPages"
+        :disabled="isLoading"
+        item-label="locations"
+        @update:page="(value) => (page = value)"
+      />
+    </template>
   </BaseTable>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { getMasterData } from '@/service/axios'
 import Badge from '@/components/ui/Badge.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import TableHeadCell from '@/components/tables/TableHeadCell.vue'
+import TablePagination from '@/components/tables/TablePagination.vue'
+import ButtonCreateLocation from '@/components/buttons/create/ButtonCreateLocation.vue'
+import ButtonUpdateLocation from '@/components/buttons/update/ButtonUpdateLocation.vue'
 import { RefreshIcon } from '@/icons'
 
 const locations = ref([])
 const isLoading = ref(false)
 const errorMessage = ref('')
 const search = ref('')
+const page = ref(1)
+const limit = 25
 
 const filteredLocations = computed(() => {
   const term = search.value.trim().toLowerCase()
@@ -110,6 +134,21 @@ const filteredLocations = computed(() => {
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(term))
   )
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredLocations.value.length / limit)))
+
+const paginatedLocations = computed(() => {
+  const start = (page.value - 1) * limit
+  return filteredLocations.value.slice(start, start + limit)
+})
+
+watch(search, () => {
+  page.value = 1
+})
+
+watch(totalPages, (value) => {
+  if (page.value > value) page.value = value
 })
 
 async function fetchLocations() {

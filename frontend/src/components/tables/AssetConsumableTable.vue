@@ -23,97 +23,94 @@
           v-model="search"
           @input="onSearchInput"
           type="text"
-          placeholder="Search asset number, name, or serial..."
+          placeholder="Search code or name..."
           class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-11 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
         />
       </div>
 
       <div class="flex items-center gap-3">
         <button
-          @click="fetchAssets(meta.page)"
+          @click="fetchConsumables(meta.page)"
           :disabled="isLoading"
           class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
         >
           <RefreshIcon :class="['h-4 w-4', { 'animate-spin': isLoading }]" />
           Refresh
         </button>
-        <ButtonCreateAssetsFixed @created="fetchAssets(1)" />
+        <ButtonCreateConsumable @created="fetchConsumables(1)" />
       </div>
     </template>
 
     <template #head>
-      <TableHeadCell>Asset</TableHeadCell>
+      <TableHeadCell>Consumable</TableHeadCell>
       <TableHeadCell>Category</TableHeadCell>
-      <TableHeadCell>Brand / Model</TableHeadCell>
-      <TableHeadCell>Location</TableHeadCell>
-      <TableHeadCell>Condition</TableHeadCell>
+      <TableHeadCell>Brand / Variant</TableHeadCell>
+      <TableHeadCell>UOM</TableHeadCell>
+      <TableHeadCell>Stock</TableHeadCell>
       <TableHeadCell>Status</TableHeadCell>
-      <TableHeadCell>Purchase Cost</TableHeadCell>
       <TableHeadCell>Action</TableHeadCell>
     </template>
 
     <tr v-if="isLoading">
-      <td colspan="8" class="px-5 py-10 text-center sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">Loading assets...</p>
+      <td colspan="7" class="px-5 py-10 text-center sm:px-6">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">Loading consumables...</p>
       </td>
     </tr>
     <tr v-else-if="errorMessage">
-      <td colspan="8" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="7" class="px-5 py-10 text-center sm:px-6">
         <p class="text-error-600 text-theme-sm dark:text-error-500">{{ errorMessage }}</p>
       </td>
     </tr>
-    <tr v-else-if="!assets.length">
-      <td colspan="8" class="px-5 py-10 text-center sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">No fixed assets found.</p>
+    <tr v-else-if="!consumables.length">
+      <td colspan="7" class="px-5 py-10 text-center sm:px-6">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">No consumables found.</p>
       </td>
     </tr>
     <tr
-      v-for="asset in assets"
+      v-for="consumable in consumables"
       v-else
-      :key="asset.id"
+      :key="consumable.id"
       class="border-t border-gray-100 dark:border-gray-800"
     >
       <td class="px-5 py-4 sm:px-6">
         <div>
           <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-            {{ asset.asset_name }}
+            {{ consumable.name }}
           </span>
           <span class="block text-gray-500 text-theme-xs dark:text-gray-400">
-            {{ asset.asset_number }}<template v-if="asset.serial_number"> &middot; SN {{ asset.serial_number }}</template>
+            {{ consumable.consumable_code }}
           </span>
         </div>
       </td>
       <td class="px-5 py-4 sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ asset.category_name || '-' }}</p>
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ consumable.category_name || '-' }}</p>
       </td>
       <td class="px-5 py-4 sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ brandModel(asset) }}</p>
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ brandVariant(consumable) }}</p>
       </td>
       <td class="px-5 py-4 sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ asset.current_location_name || '-' }}</p>
-      </td>
-      <td class="px-5 py-4 sm:px-6">
-        <Badge :color="conditionColor(asset.asset_condition)" size="sm">
-          {{ formatLabel(asset.asset_condition) }}
-        </Badge>
-      </td>
-      <td class="px-5 py-4 sm:px-6">
-        <Badge :color="statusColor(asset.status)" size="sm">
-          {{ formatLabel(asset.status) }}
-        </Badge>
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ consumable.uom_code || consumable.uom_name || '-' }}</p>
       </td>
       <td class="px-5 py-4 sm:px-6">
         <div>
           <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-            {{ formatCurrency(asset.purchase_cost) }}
+            {{ formatQuantity(consumable.total_stock) }}
           </span>
-          <span class="block text-gray-500 text-theme-xs dark:text-gray-400">
-            {{ formatDate(asset.purchase_date) }}
+          <span class="block text-theme-xs" :class="isLowStock(consumable) ? 'text-error-600 dark:text-error-500' : 'text-gray-500 dark:text-gray-400'">
+            min. {{ formatQuantity(consumable.minimum_stock) }}
           </span>
         </div>
       </td>
       <td class="px-5 py-4 sm:px-6">
-        <ButtonUpdateAssetsFixed :asset="asset" @updated="fetchAssets(meta.page)" />
+        <div class="flex flex-col gap-1">
+          <Badge :color="consumable.is_active ? 'success' : 'light'" size="sm">
+            {{ consumable.is_active ? 'Active' : 'Inactive' }}
+          </Badge>
+          <Badge v-if="isLowStock(consumable)" color="warning" size="sm">Low stock</Badge>
+        </div>
+      </td>
+      <td class="px-5 py-4 sm:px-6">
+        <ButtonUpdateConsumable :consumable="consumable" @updated="fetchConsumables(meta.page)" />
       </td>
     </tr>
 
@@ -124,8 +121,8 @@
         :total="meta.total"
         :total-pages="meta.totalPages"
         :disabled="isLoading"
-        item-label="assets"
-        @update:page="fetchAssets"
+        item-label="consumables"
+        @update:page="fetchConsumables"
       />
     </template>
   </BaseTable>
@@ -133,16 +130,16 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
-import { getAssets } from '@/service/axios'
+import { getConsumables } from '@/service/axios'
 import Badge from '@/components/ui/Badge.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import TableHeadCell from '@/components/tables/TableHeadCell.vue'
 import TablePagination from '@/components/tables/TablePagination.vue'
-import ButtonCreateAssetsFixed from '@/components/buttons/create/ButtonCreateAssetsFixed.vue'
-import ButtonUpdateAssetsFixed from '@/components/buttons/update/ButtonUpdateAssetsFixed.vue'
+import ButtonCreateConsumable from '@/components/buttons/create/ButtonCreateConsumable.vue'
+import ButtonUpdateConsumable from '@/components/buttons/update/ButtonUpdateConsumable.vue'
 import { RefreshIcon } from '@/icons'
 
-const assets = ref([])
+const consumables = ref([])
 const isLoading = ref(false)
 const errorMessage = ref('')
 const search = ref('')
@@ -150,73 +147,41 @@ let searchTimer = null
 
 const meta = reactive({ page: 1, limit: 25, total: 0, totalPages: 1 })
 
-const STATUS_BADGE_COLOR = {
-  REGISTERED: 'light',
-  AVAILABLE: 'success',
-  ASSIGNED: 'info',
-  MAINTENANCE: 'warning',
-  LOST: 'error',
-  RETIRED: 'dark',
-  DISPOSED: 'dark',
-  VOID: 'error',
-}
-
-const CONDITION_BADGE_COLOR = {
-  NEW: 'success',
-  GOOD: 'success',
-  FAIR: 'warning',
-  POOR: 'warning',
-  DAMAGED: 'error',
-}
-
-const statusColor = (status) => STATUS_BADGE_COLOR[status] || 'light'
-const conditionColor = (condition) => CONDITION_BADGE_COLOR[condition] || 'light'
-
-const formatLabel = (value) => {
-  if (!value) return '-'
-  return value.charAt(0) + value.slice(1).toLowerCase()
-}
-
-const brandModel = (asset) => {
-  const parts = [asset.brand_name, asset.model_name].filter(Boolean)
+const brandVariant = (consumable) => {
+  const parts = [consumable.brand_name, consumable.variant].filter(Boolean)
   return parts.length ? parts.join(' / ') : '-'
 }
 
-const formatCurrency = (value) => {
+const isLowStock = (consumable) => {
+  const stock = Number(consumable.total_stock ?? 0)
+  const minimum = Number(consumable.minimum_stock ?? 0)
+  return minimum > 0 && stock < minimum
+}
+
+const formatQuantity = (value) => {
   if (value === null || value === undefined || value === '') return '-'
   const number = Number(value)
   if (Number.isNaN(number)) return '-'
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(number)
+  return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 }).format(number)
 }
 
-const formatDate = (value) => {
-  if (!value) return '-'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '-'
-  return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(date)
-}
-
-async function fetchAssets(page = 1) {
+async function fetchConsumables(page = 1) {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const data = await getAssets({
+    const data = await getConsumables({
       page,
       limit: meta.limit,
       ...(search.value ? { search: search.value } : {}),
     })
-    assets.value = data?.data ?? []
+    consumables.value = data?.data ?? []
     meta.page = data?.meta?.page ?? page
     meta.limit = data?.meta?.limit ?? meta.limit
-    meta.total = data?.meta?.total ?? assets.value.length
+    meta.total = data?.meta?.total ?? consumables.value.length
     meta.totalPages = data?.meta?.totalPages ?? 1
   } catch (err) {
-    assets.value = []
-    errorMessage.value = err?.response?.data?.message || 'Failed to load fixed assets.'
+    consumables.value = []
+    errorMessage.value = err?.response?.data?.message || 'Failed to load consumables.'
   } finally {
     isLoading.value = false
   }
@@ -224,9 +189,9 @@ async function fetchAssets(page = 1) {
 
 function onSearchInput() {
   clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => fetchAssets(1), 400)
+  searchTimer = setTimeout(() => fetchConsumables(1), 400)
 }
 
-onMounted(() => fetchAssets(1))
+onMounted(() => fetchConsumables(1))
 onUnmounted(() => clearTimeout(searchTimer))
 </script>

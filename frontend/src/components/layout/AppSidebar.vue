@@ -216,7 +216,6 @@ import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 
 import {
-  GridIcon,
   CalenderIcon,
   UserCircleIcon,
   ChatIcon,
@@ -232,6 +231,7 @@ import {
   BoxIcon,
   SettingsIcon,
   FolderIcon,
+  LayoutDashboardIcon,
 } from "../../icons";
 import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
@@ -246,9 +246,9 @@ const menuGroups = [
     title: "Menu",
     items: [
       {
-        icon: GridIcon,
+        icon: LayoutDashboardIcon,
         name: "Dashboard",
-        subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+        path: "/",
       },
       {
         icon: CalenderIcon,
@@ -287,6 +287,7 @@ const menuGroups = [
           { name: "Asset Categories", path: "/master/categories", pro: false },
           { name: "Brands", path: "/master/brands", pro: false },
           { name: "Locations", path: "/master/locations", pro: false },
+          { name: "Units of Measure", path: "/master/uoms", pro: false },
           { name: "Numbering", path: "/master/numbering", pro: false },
         ],
       },

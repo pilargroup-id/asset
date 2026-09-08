@@ -22,79 +22,67 @@
         <input
           v-model="search"
           type="text"
-          placeholder="Search name, sequence type, or pattern..."
+          placeholder="Search code or name..."
           class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-11 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
         />
       </div>
 
       <div class="flex items-center gap-3">
         <button
-          @click="fetchNumberingConfigs"
+          @click="fetchUoms"
           :disabled="isLoading"
           class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
         >
           <RefreshIcon :class="['h-4 w-4', { 'animate-spin': isLoading }]" />
           Refresh
         </button>
-        <ButtonCreateNumbering @created="fetchNumberingConfigs" />
+        <ButtonCreateUom @created="fetchUoms" />
       </div>
     </template>
 
     <template #head>
+      <TableHeadCell>Code</TableHeadCell>
       <TableHeadCell>Name</TableHeadCell>
-      <TableHeadCell>Sequence Type</TableHeadCell>
-      <TableHeadCell>Pattern</TableHeadCell>
-      <TableHeadCell>Current Sequence</TableHeadCell>
-      <TableHeadCell>Reset Period</TableHeadCell>
       <TableHeadCell>Status</TableHeadCell>
       <TableHeadCell>Actions</TableHeadCell>
     </template>
 
     <tr v-if="isLoading">
-      <td colspan="7" class="px-5 py-10 text-center sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">Loading numbering configs...</p>
+      <td colspan="4" class="px-5 py-10 text-center sm:px-6">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">Loading units of measure...</p>
       </td>
     </tr>
     <tr v-else-if="errorMessage">
-      <td colspan="7" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="4" class="px-5 py-10 text-center sm:px-6">
         <p class="text-error-600 text-theme-sm dark:text-error-500">{{ errorMessage }}</p>
       </td>
     </tr>
-    <tr v-else-if="!filteredConfigs.length">
-      <td colspan="7" class="px-5 py-10 text-center sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">No numbering configs found.</p>
+    <tr v-else-if="!filteredUoms.length">
+      <td colspan="4" class="px-5 py-10 text-center sm:px-6">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">No units of measure found.</p>
       </td>
     </tr>
     <tr
-      v-for="config in paginatedConfigs"
+      v-for="uom in paginatedUoms"
       v-else
-      :key="config.id"
+      :key="uom.id"
       class="border-t border-gray-100 dark:border-gray-800"
     >
       <td class="px-5 py-4 sm:px-6">
         <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-          {{ config.name }}
+          {{ uom.code || '-' }}
         </span>
       </td>
       <td class="px-5 py-4 sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ config.sequence_type }}</p>
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ uom.name }}</p>
       </td>
       <td class="px-5 py-4 sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ config.pattern }}</p>
-      </td>
-      <td class="px-5 py-4 sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ config.current_sequence }}</p>
-      </td>
-      <td class="px-5 py-4 sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ config.reset_period || '-' }}</p>
-      </td>
-      <td class="px-5 py-4 sm:px-6">
-        <Badge :color="config.is_active ? 'success' : 'light'" size="sm">
-          {{ config.is_active ? 'Active' : 'Inactive' }}
+        <Badge :color="uom.is_active ? 'success' : 'light'" size="sm">
+          {{ uom.is_active ? 'Active' : 'Inactive' }}
         </Badge>
       </td>
       <td class="px-5 py-4 sm:px-6">
-        <ButtonUpdateNumbering :config="config" @updated="fetchNumberingConfigs" />
+        <ButtonUpdateUom :uom="uom" @updated="fetchUoms" />
       </td>
     </tr>
 
@@ -102,10 +90,10 @@
       <TablePagination
         :page="page"
         :limit="limit"
-        :total="filteredConfigs.length"
+        :total="filteredUoms.length"
         :total-pages="totalPages"
         :disabled="isLoading"
-        item-label="numbering configs"
+        item-label="units"
         @update:page="(value) => (page = value)"
       />
     </template>
@@ -114,37 +102,37 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { getNumberingConfigs } from '@/service/axios'
+import { getMasterData } from '@/service/axios'
 import Badge from '@/components/ui/Badge.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import TableHeadCell from '@/components/tables/TableHeadCell.vue'
 import TablePagination from '@/components/tables/TablePagination.vue'
-import ButtonCreateNumbering from '@/components/buttons/create/ButtonCreateNumbering.vue'
-import ButtonUpdateNumbering from '@/components/buttons/update/ButtonUpdateNumbering.vue'
+import ButtonCreateUom from '@/components/buttons/create/ButtonCreateUom.vue'
+import ButtonUpdateUom from '@/components/buttons/update/ButtonUpdateUom.vue'
 import { RefreshIcon } from '@/icons'
 
-const configs = ref([])
+const uoms = ref([])
 const isLoading = ref(false)
 const errorMessage = ref('')
 const search = ref('')
 const page = ref(1)
 const limit = 25
 
-const filteredConfigs = computed(() => {
+const filteredUoms = computed(() => {
   const term = search.value.trim().toLowerCase()
-  if (!term) return configs.value
-  return configs.value.filter((config) =>
-    [config.name, config.sequence_type, config.pattern]
+  if (!term) return uoms.value
+  return uoms.value.filter((uom) =>
+    [uom.code, uom.name]
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(term))
   )
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredConfigs.value.length / limit)))
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredUoms.value.length / limit)))
 
-const paginatedConfigs = computed(() => {
+const paginatedUoms = computed(() => {
   const start = (page.value - 1) * limit
-  return filteredConfigs.value.slice(start, start + limit)
+  return filteredUoms.value.slice(start, start + limit)
 })
 
 watch(search, () => {
@@ -155,19 +143,19 @@ watch(totalPages, (value) => {
   if (page.value > value) page.value = value
 })
 
-async function fetchNumberingConfigs() {
+async function fetchUoms() {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const data = await getNumberingConfigs()
-    configs.value = data?.data ?? []
+    const data = await getMasterData('uoms')
+    uoms.value = data?.data ?? []
   } catch (err) {
-    configs.value = []
-    errorMessage.value = err?.response?.data?.message || 'Failed to load numbering configs.'
+    uoms.value = []
+    errorMessage.value = err?.response?.data?.message || 'Failed to load units of measure.'
   } finally {
     isLoading.value = false
   }
 }
 
-onMounted(fetchNumberingConfigs)
+onMounted(fetchUoms)
 </script>

@@ -2,7 +2,7 @@
   <AdminLayout>
     <PageBreadcrumb :pageTitle="currentPageTitle" />
     <div class="space-y-5 sm:space-y-6">
-      <ComponentCard title="Asset Fixed" desc="List and manage fixed (serialized) assets.">
+      <ComponentCard>
         <AssetsFixedTable />
       </ComponentCard>
     </div>

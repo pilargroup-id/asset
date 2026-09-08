@@ -8,10 +8,10 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'Ecommerce',
-      component: () => import('../views/Ecommerce.vue'),
+      name: 'Dashboard',
+      component: () => import('../components/pages/dashboard/DashboardPage.vue'),
       meta: {
-        title: 'eCommerce Dashboard',
+        title: 'Dashboard',
       },
     },
     {
@@ -68,6 +68,14 @@ const router = createRouter({
       component: () => import('../components/pages/master/LocationsPage.vue'),
       meta: {
         title: 'Locations',
+      },
+    },
+    {
+      path: '/master/uoms',
+      name: 'Units of Measure',
+      component: () => import('../components/pages/master/UomsPage.vue'),
+      meta: {
+        title: 'Units of Measure',
       },
     },
     {
