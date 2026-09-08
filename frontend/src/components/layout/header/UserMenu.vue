@@ -4,11 +4,11 @@
       class="flex items-center text-gray-700 dark:text-gray-400"
       @click.prevent="toggleDropdown"
     >
-      <span class="mr-3 overflow-hidden rounded-full h-11 w-11">
-        <img src="/images/user/owner.jpg" alt="User" />
+      <span class="mr-3 flex items-center justify-center h-11 w-11 text-gray-400 dark:text-gray-500">
+        <UserCircleIcon class="w-full h-full" />
       </span>
 
-      <span class="block mr-1 font-medium text-theme-sm">Musharof </span>
+      <span class="block mr-1 font-medium text-theme-sm">{{ displayName }}</span>
 
       <ChevronDownIcon :class="{ 'rotate-180': dropdownOpen }" />
     </button>
@@ -20,10 +20,10 @@
     >
       <div>
         <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-          Musharof Chowdhury
+          {{ displayName }}
         </span>
         <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
-          randomuser@pimjo.com
+          {{ displayEmail }}
         </span>
       </div>
 
@@ -60,10 +60,14 @@
 <script setup>
 import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/icons'
 import { RouterLink } from 'vue-router'
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { authState, fetchCurrentUser, getDisplayName, getDisplayEmail, logout } from '@/service/auth'
 
 const dropdownOpen = ref(false)
 const dropdownRef = ref(null)
+
+const displayName = computed(() => getDisplayName(authState.user))
+const displayEmail = computed(() => getDisplayEmail(authState.user))
 
 const menuItems = [
   { href: '/profile', icon: UserCircleIcon, text: 'Edit profile' },
@@ -80,8 +84,7 @@ const closeDropdown = () => {
 }
 
 const signOut = () => {
-  // Implement sign out logic here
-  console.log('Signing out...')
+  logout()
   closeDropdown()
 }
 
@@ -93,6 +96,10 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+
+  if (!authState.user) {
+    fetchCurrentUser().catch(() => {})
+  }
 })
 
 onUnmounted(() => {

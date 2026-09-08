@@ -31,6 +31,70 @@ const router = createRouter({
       },
     },
     {
+      path: '/asset/fixed',
+      name: 'Asset Fixed',
+      component: () => import('../components/pages/assets/AssetFixed.vue'),
+      meta: {
+        title: 'Asset Fixed',
+      },
+    },
+    {
+      path: '/asset/consumeable',
+      name: 'Asset Consumeable',
+      component: () => import('../components/pages/assets/AssetConsumeable.vue'),
+      meta: {
+        title: 'Asset Consumeable',
+      },
+    },
+    {
+      path: '/master/categories',
+      name: 'Asset Categories',
+      component: () => import('../components/pages/master/AssetCategoriesPage.vue'),
+      meta: {
+        title: 'Asset Categories',
+      },
+    },
+    {
+      path: '/master/brands',
+      name: 'Brands',
+      component: () => import('../components/pages/master/BrandsPage.vue'),
+      meta: {
+        title: 'Brands',
+      },
+    },
+    {
+      path: '/master/locations',
+      name: 'Locations',
+      component: () => import('../components/pages/master/LocationsPage.vue'),
+      meta: {
+        title: 'Locations',
+      },
+    },
+    {
+      path: '/master/numbering',
+      name: 'Numbering',
+      component: () => import('../components/pages/master/NumberingPage.vue'),
+      meta: {
+        title: 'Numbering',
+      },
+    },
+    {
+      path: '/permissions/list',
+      name: 'Permission List',
+      component: () => import('../components/pages/permissions/PermissionListPage.vue'),
+      meta: {
+        title: 'Permission List',
+      },
+    },
+    {
+      path: '/permissions/assignments',
+      name: 'Permission Assignments',
+      component: () => import('../components/pages/permissions/PermissionAssignments.vue'),
+      meta: {
+        title: 'Permission Assignments',
+      },
+    },
+    {
       path: '/form-elements',
       name: 'Form Elements',
       component: () => import('../views/Forms/FormElements.vue'),

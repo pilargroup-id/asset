@@ -229,6 +229,9 @@ import {
   TableIcon,
   ListIcon,
   PlugInIcon,
+  BoxIcon,
+  SettingsIcon,
+  FolderIcon,
 } from "../../icons";
 import SidebarWidget from "./SidebarWidget.vue";
 import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
@@ -256,6 +259,36 @@ const menuGroups = [
         icon: UserCircleIcon,
         name: "User Profile",
         path: "/profile",
+      },
+      {
+        icon: BoxIcon,
+        name: "Asset",
+        subItems: [
+          { name: "Asset Fixed", path: "/asset/fixed", pro: false },
+          { name: "Asset Consumeable", path: "/asset/consumeable", pro: false },
+        ],
+      },
+      {
+        icon: SettingsIcon,
+        name: "Permissions",
+        subItems: [
+          { name: "Permission List", path: "/permissions/list", pro: false },
+          {
+            name: "Permission Assignments",
+            path: "/permissions/assignments",
+            pro: false,
+          },
+        ],
+      },
+      {
+        icon: FolderIcon,
+        name: "Master",
+        subItems: [
+          { name: "Asset Categories", path: "/master/categories", pro: false },
+          { name: "Brands", path: "/master/brands", pro: false },
+          { name: "Locations", path: "/master/locations", pro: false },
+          { name: "Numbering", path: "/master/numbering", pro: false },
+        ],
       },
 
       {

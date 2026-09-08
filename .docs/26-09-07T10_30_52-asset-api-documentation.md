@@ -15,7 +15,7 @@ GET /api/auth/me
 ## Dashboard
 
 ```http
-GET /api/dashboard
+GET /api/dashboard/api/dashboard
 ```
 
 ## Directory
