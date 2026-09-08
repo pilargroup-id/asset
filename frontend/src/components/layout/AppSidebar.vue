@@ -19,30 +19,20 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/">
+      <router-link to="/" class="flex items-center gap-3">
         <img
+          src="/images/logo/logo-piagam.svg"
+          alt="Logo"
+          width="52"
+          height="52"
+          class="shrink-0"
+        />
+        <span
           v-if="isExpanded || isHovered || isMobileOpen"
-          class="dark:hidden"
-          src="/images/logo/logo.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img
-          v-if="isExpanded || isHovered || isMobileOpen"
-          class="hidden dark:block"
-          src="/images/logo/logo-dark.svg"
-          alt="Logo"
-          width="150"
-          height="40"
-        />
-        <img
-          v-else
-          src="/images/logo/logo-icon.svg"
-          alt="Logo"
-          width="32"
-          height="32"
-        />
+          class="bg-gradient-to-r from-[#caa14a] to-[#8a6a1f] bg-clip-text text-2xl font-extrabold tracking-tight text-transparent dark:from-[#f3dfa0] dark:to-[#caa14a]"
+        >
+          Asset
+        </span>
       </router-link>
     </div>
     <div
@@ -216,25 +206,14 @@ import { ref, computed } from "vue";
 import { useRoute } from "vue-router";
 
 import {
-  CalenderIcon,
-  UserCircleIcon,
-  ChatIcon,
-  MailIcon,
-  DocsIcon,
-  PieChartIcon,
   ChevronDownIcon,
   HorizontalDots,
-  PageIcon,
-  TableIcon,
-  ListIcon,
-  PlugInIcon,
   BoxIcon,
   SettingsIcon,
   FolderIcon,
   LayoutDashboardIcon,
 } from "../../icons";
 import SidebarWidget from "./SidebarWidget.vue";
-import BoxCubeIcon from "@/icons/BoxCubeIcon.vue";
 import { useSidebar } from "@/composables/useSidebar";
 
 const route = useRoute();
@@ -249,16 +228,6 @@ const menuGroups = [
         icon: LayoutDashboardIcon,
         name: "Dashboard",
         path: "/",
-      },
-      {
-        icon: CalenderIcon,
-        name: "Calendar",
-        path: "/calendar",
-      },
-      {
-        icon: UserCircleIcon,
-        name: "User Profile",
-        path: "/profile",
       },
       {
         icon: BoxIcon,
@@ -291,61 +260,6 @@ const menuGroups = [
           { name: "Numbering", path: "/master/numbering", pro: false },
         ],
       },
-
-      {
-        name: "Forms",
-        icon: ListIcon,
-        subItems: [
-          { name: "Form Elements", path: "/form-elements", pro: false },
-        ],
-      },
-      {
-        name: "Tables",
-        icon: TableIcon,
-        subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-      },
-      {
-        name: "Pages",
-        icon: PageIcon,
-        subItems: [
-          { name: "Black Page", path: "/blank", pro: false },
-          { name: "404 Page", path: "/error-404", pro: false },
-        ],
-      },
-    ],
-  },
-  {
-    title: "Others",
-    items: [
-      {
-        icon: PieChartIcon,
-        name: "Charts",
-        subItems: [
-          { name: "Line Chart", path: "/line-chart", pro: false },
-          { name: "Bar Chart", path: "/bar-chart", pro: false },
-        ],
-      },
-      {
-        icon: BoxCubeIcon,
-        name: "Ui Elements",
-        subItems: [
-          { name: "Alerts", path: "/alerts", pro: false },
-          { name: "Avatars", path: "/avatars", pro: false },
-          { name: "Badge", path: "/badge", pro: false },
-          { name: "Buttons", path: "/buttons", pro: false },
-          { name: "Images", path: "/images", pro: false },
-          { name: "Videos", path: "/videos", pro: false },
-        ],
-      },
-      {
-        icon: PlugInIcon,
-        name: "Authentication",
-        subItems: [
-          { name: "Signin", path: "/signin", pro: false },
-          { name: "Signup", path: "/signup", pro: false },
-        ],
-      },
-      // ... Add other menu items here
     ],
   },
 ];

@@ -58,148 +58,108 @@
         </button>
       </div>
 
-      <ul class="flex flex-col h-auto overflow-y-auto custom-scrollbar">
+      <div v-if="isLoading" class="flex flex-1 items-center justify-center text-sm text-gray-400">
+        Memuat notifikasi...
+      </div>
+
+      <div
+        v-else-if="errorMessage"
+        class="flex flex-1 flex-col items-center justify-center gap-2 px-2 text-center"
+      >
+        <p class="text-sm text-error-600 dark:text-error-500">{{ errorMessage }}</p>
+        <button @click="fetchRecentActivity" class="text-sm font-medium text-brand-500 hover:underline">
+          Coba lagi
+        </button>
+      </div>
+
+      <ul v-else-if="notifications.length" class="flex flex-col flex-1 h-auto overflow-y-auto custom-scrollbar">
         <li v-for="notification in notifications" :key="notification.id" @click="handleItemClick">
           <a
             class="flex gap-3 rounded-lg border-b border-gray-100 p-3 px-4.5 py-3 hover:bg-gray-100 dark:border-gray-800 dark:hover:bg-white/5"
             href="#"
           >
-            <span class="relative block w-full h-10 rounded-full z-1 max-w-10">
-              <img :src="notification.userImage" alt="User" class="overflow-hidden rounded-full" />
+            <span class="relative block h-10 w-10 shrink-0 rounded-full z-1">
               <span
-                :class="notification.status === 'online' ? 'bg-success-500' : 'bg-error-500'"
-                class="absolute bottom-0 right-0 z-10 h-2.5 w-full max-w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"
+                class="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 text-sm font-semibold text-brand-600 dark:bg-brand-500/15 dark:text-brand-400"
+              >
+                {{ initials(actorName(notification)) }}
+              </span>
+              <span
+                :class="notification.status === 'FAILED' ? 'bg-error-500' : 'bg-success-500'"
+                class="absolute bottom-0 right-0 z-10 h-2.5 w-2.5 rounded-full border-[1.5px] border-white dark:border-gray-900"
               ></span>
             </span>
 
-            <span class="block">
+            <span class="block min-w-0">
               <span class="mb-1.5 block text-theme-sm text-gray-500 dark:text-gray-400">
                 <span class="font-medium text-gray-800 dark:text-white/90">
-                  {{ notification.userName }}
+                  {{ actorName(notification) }}
                 </span>
-                {{ notification.action }}
-                <span class="font-medium text-gray-800 dark:text-white/90">
-                  {{ notification.project }}
-                </span>
+                {{ describeActivity(notification) }}
               </span>
 
               <span class="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
-                <span>{{ notification.type }}</span>
+                <span>{{ notification.module }}</span>
                 <span class="w-1 h-1 bg-gray-400 rounded-full"></span>
-                <span>{{ notification.time }}</span>
+                <span>{{ formatRelativeTime(notification.created_at) }}</span>
               </span>
             </span>
           </a>
         </li>
       </ul>
 
-      <router-link
-        to="#"
+      <div v-else class="flex flex-1 items-center justify-center text-sm text-gray-400">
+        Belum ada aktivitas.
+      </div>
+
+      <button
+        type="button"
         class="mt-3 flex justify-center rounded-lg border border-gray-300 bg-white p-3 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
         @click="handleViewAllClick"
       >
         View All Notification
-      </router-link>
+      </button>
     </div>
     <!-- Dropdown End -->
+
+    <DialogActivityLogs :is-open="isLogDialogOpen" @close="isLogDialogOpen = false" />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { RouterLink } from 'vue-router'
+import DialogActivityLogs from '@/components/dialog/DialogActivityLogs.vue'
+import { getActivityLogs } from '@/service/axios'
+import { formatRelativeTime } from '@/utils/formatTime'
+import { actorName, describeActivity, initials } from '@/utils/activityLog'
 
 const dropdownOpen = ref(false)
 const notifying = ref(true)
 const dropdownRef = ref(null)
+const isLogDialogOpen = ref(false)
 
-const notifications = ref([
-  {
-    id: 1,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-02.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'online',
-  },
-  {
-    id: 2,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-03.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'offline',
-  },
-  {
-    id: 3,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-04.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'online',
-  },
-  {
-    id: 4,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-05.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'online',
-  },
-  {
-    id: 5,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-06.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'offline',
-  },
-  {
-    id: 6,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-07.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'online',
-  },
-  {
-    id: 7,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-08.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'online',
-  },
-  {
-    id: 7,
-    userName: 'Terry Franci',
-    userImage: '/images/user/user-09.jpg',
-    action: 'requests permission to change',
-    project: 'Project - Nganter App',
-    type: 'Project',
-    time: '5 min ago',
-    status: 'online',
-  },
-  // Add more notifications here...
-])
+const notifications = ref([])
+const isLoading = ref(false)
+const errorMessage = ref('')
+
+async function fetchRecentActivity() {
+  isLoading.value = true
+  errorMessage.value = ''
+  try {
+    const res = await getActivityLogs({ page: 1, limit: 8 })
+    notifications.value = res?.data ?? []
+  } catch (err) {
+    notifications.value = []
+    errorMessage.value = err?.response?.data?.message || 'Gagal memuat notifikasi.'
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const toggleDropdown = () => {
   dropdownOpen.value = !dropdownOpen.value
   notifying.value = false
+  if (dropdownOpen.value) fetchRecentActivity()
 }
 
 const closeDropdown = () => {
@@ -214,16 +174,13 @@ const handleClickOutside = (event) => {
 
 const handleItemClick = (event) => {
   event.preventDefault()
-  // Handle the item click action here
-  console.log('Notification item clicked')
   closeDropdown()
 }
 
 const handleViewAllClick = (event) => {
   event.preventDefault()
-  // Handle the "View All Notification" action here
-  console.log('View All Notifications clicked')
   closeDropdown()
+  isLogDialogOpen.value = true
 }
 
 onMounted(() => {

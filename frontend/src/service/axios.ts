@@ -470,3 +470,56 @@ export async function getDashboard(): Promise<DashboardResponse> {
   const { data } = await api.get<DashboardResponse>('/dashboard')
   return data
 }
+
+export interface ActivityLogParams {
+  page?: number
+  limit?: number
+  module?: string
+  action?: string
+  user_id?: number | string
+  entity_type?: string
+  entity_id?: number | string
+  source?: string
+  correlation_id?: string
+}
+
+export interface ActivityLogListMeta {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+}
+
+export interface ActivityLogRecord {
+  id: number
+  user_id?: number | null
+  username_snapshot?: string | null
+  user_name_snapshot?: string | null
+  department_name_snapshot?: string | null
+  company_name_snapshot?: string | null
+  module: string
+  action: string
+  source: string
+  entity_type?: string | null
+  entity_id?: number | null
+  entity_reference?: string | null
+  entity_name_snapshot?: string | null
+  description?: string | null
+  status: 'SUCCESS' | 'FAILED'
+  error_message?: string | null
+  created_at: string
+  [key: string]: unknown
+}
+
+export interface ActivityLogListResponse {
+  success: boolean
+  message: string
+  data: ActivityLogRecord[]
+  meta: ActivityLogListMeta
+}
+
+// GET /api/activity-logs
+export async function getActivityLogs(params: ActivityLogParams = {}): Promise<ActivityLogListResponse> {
+  const { data } = await api.get<ActivityLogListResponse>('/activity-logs', { params })
+  return data
+}
