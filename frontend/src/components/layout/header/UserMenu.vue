@@ -4,8 +4,15 @@
       class="flex items-center text-gray-700 dark:text-gray-400"
       @click.prevent="toggleDropdown"
     >
-      <span class="mr-3 flex items-center justify-center h-11 w-11 text-gray-400 dark:text-gray-500">
-        <UserCircleIcon class="w-full h-full" />
+      <span class="relative mr-3 flex h-11 w-11 shrink-0 items-center justify-center">
+        <span
+          class="avatar-badge flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold text-gray-800 dark:text-white"
+        >
+          {{ initials }}
+        </span>
+        <span
+          class="status-dot-online absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-white dark:ring-gray-dark"
+        ></span>
       </span>
 
       <span class="block mr-1 font-medium text-theme-sm">{{ displayName }}</span>
@@ -43,7 +50,7 @@
 </template>
 
 <script setup>
-import { UserCircleIcon, ChevronDownIcon, LogoutIcon } from '@/icons'
+import { ChevronDownIcon, LogoutIcon } from '@/icons'
 import { RouterLink } from 'vue-router'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { authState, fetchCurrentUser, getDisplayName, getDisplayEmail, logout } from '@/service/auth'
@@ -53,6 +60,12 @@ const dropdownRef = ref(null)
 
 const displayName = computed(() => getDisplayName(authState.user))
 const displayEmail = computed(() => getDisplayEmail(authState.user))
+const initials = computed(() => {
+  const parts = displayName.value.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[1][0]).toUpperCase()
+})
 
 const toggleDropdown = () => {
   dropdownOpen.value = !dropdownOpen.value
