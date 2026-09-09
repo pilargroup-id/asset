@@ -114,6 +114,228 @@ export async function updateAsset(id: number | string, payload: UpdateAssetPaylo
   return data
 }
 
+export interface AssetHistoryEntry {
+  id: number
+  asset_id: number
+  event_type: string
+  event_date: string
+  reference_type?: string | null
+  reference_id?: number | null
+  description?: string | null
+  details?: Record<string, unknown> | string | null
+  performed_by?: string | null
+  created_at?: string
+  [key: string]: unknown
+}
+
+export interface AssetAssignmentRecord {
+  id: number
+  asset_id: number
+  assignment_type: 'USER' | 'DEPARTMENT' | 'LOCATION' | 'SHARED_POOL'
+  assigned_user_id?: string | null
+  assigned_user_name_snapshot?: string | null
+  assigned_department_id?: number | string | null
+  assigned_department_name_snapshot?: string | null
+  assigned_location_id?: number | string | null
+  assigned_location_name_snapshot?: string | null
+  purpose?: string | null
+  assigned_at: string
+  assigned_by: string
+  returned_at?: string | null
+  returned_by?: string | null
+  return_condition?: string | null
+  return_location_id?: number | string | null
+  return_note?: string | null
+  [key: string]: unknown
+}
+
+export interface AssetTransferRecord {
+  id: number
+  asset_id: number
+  transfer_date: string
+  from_location_id?: number | string | null
+  to_location_id?: number | string | null
+  from_company_id?: string | null
+  to_company_id?: string | null
+  from_managing_department_id?: number | string | null
+  to_managing_department_id?: number | string | null
+  reason?: string | null
+  notes?: string | null
+  transferred_by: string
+  [key: string]: unknown
+}
+
+export interface AssetMaintenanceRecord {
+  id: number
+  asset_id: number
+  maintenance_type: string
+  vendor_id?: number | string | null
+  vendor_name?: string | null
+  start_date: string
+  completion_date?: string | null
+  cost?: number | string | null
+  problem_description?: string | null
+  result?: string | null
+  status: 'OPEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED'
+  notes?: string | null
+  [key: string]: unknown
+}
+
+export interface AssetExternalReferenceRecord {
+  id: number
+  asset_id: number
+  source_system: string
+  reference_type: string
+  reference_id: string
+  reference_number?: string | null
+  linked_by_user_id?: string | null
+  linked_at?: string
+  [key: string]: unknown
+}
+
+export interface AssetHistoryData {
+  asset: AssetRecord
+  history: AssetHistoryEntry[]
+  assignments: AssetAssignmentRecord[]
+  transfers: AssetTransferRecord[]
+  maintenances: AssetMaintenanceRecord[]
+  external_references: AssetExternalReferenceRecord[]
+}
+
+export interface AssetHistoryResponse {
+  success: boolean
+  message: string
+  data: AssetHistoryData
+}
+
+// GET /api/assets/:id/history
+export async function getAssetHistory(id: number | string): Promise<AssetHistoryResponse> {
+  const { data } = await api.get<AssetHistoryResponse>(`/assets/${id}/history`)
+  return data
+}
+
+export interface AssignAssetPayload {
+  assignment_type: 'USER' | 'DEPARTMENT' | 'LOCATION' | 'SHARED_POOL'
+  assigned_user_id?: string
+  assigned_department_id?: number | string
+  assigned_location_id?: number | string
+  purpose?: string
+  assigned_at?: string
+}
+
+export interface AssetAssignmentResponse {
+  success: boolean
+  message: string
+  data: AssetAssignmentRecord
+}
+
+// POST /api/assets/:id/assign
+export async function assignAsset(
+  id: number | string,
+  payload: AssignAssetPayload
+): Promise<AssetAssignmentResponse> {
+  const { data } = await api.post<AssetAssignmentResponse>(`/assets/${id}/assign`, payload)
+  return data
+}
+
+export interface ReturnAssetPayload {
+  returned_at?: string
+  return_condition?: 'NEW' | 'GOOD' | 'FAIR' | 'POOR' | 'DAMAGED'
+  return_location_id?: number | string
+  return_note?: string
+}
+
+// POST /api/assets/:id/return
+export async function returnAsset(
+  id: number | string,
+  payload: ReturnAssetPayload = {}
+): Promise<AssetAssignmentResponse> {
+  const { data } = await api.post<AssetAssignmentResponse>(`/assets/${id}/return`, payload)
+  return data
+}
+
+export interface TransferAssetPayload {
+  to_company_id?: string
+  to_managing_department_id?: number | string
+  to_location_id?: number | string
+  reason?: string
+  notes?: string
+  transfer_date?: string
+}
+
+export interface AssetTransferResponse {
+  success: boolean
+  message: string
+  data: AssetRecord & { id: number }
+}
+
+// POST /api/assets/:id/transfer
+export async function transferAsset(
+  id: number | string,
+  payload: TransferAssetPayload
+): Promise<AssetTransferResponse> {
+  const { data } = await api.post<AssetTransferResponse>(`/assets/${id}/transfer`, payload)
+  return data
+}
+
+export interface CreateMaintenancePayload {
+  maintenance_type: string
+  vendor_id?: number | string
+  start_date?: string
+  cost?: number
+  problem_description?: string
+  notes?: string
+}
+
+export interface AssetMaintenanceResponse {
+  success: boolean
+  message: string
+  data: AssetMaintenanceRecord
+}
+
+// POST /api/assets/:id/maintenance
+export async function createAssetMaintenance(
+  id: number | string,
+  payload: CreateMaintenancePayload
+): Promise<AssetMaintenanceResponse> {
+  const { data } = await api.post<AssetMaintenanceResponse>(`/assets/${id}/maintenance`, payload)
+  return data
+}
+
+export interface CompleteMaintenancePayload {
+  completion_date?: string
+  result?: string
+  cost?: number
+  notes?: string
+}
+
+// PATCH /api/assets/:id/maintenance/:maintenanceId/complete
+export async function completeAssetMaintenance(
+  id: number | string,
+  maintenanceId: number | string,
+  payload: CompleteMaintenancePayload = {}
+): Promise<AssetMaintenanceResponse> {
+  const { data } = await api.patch<AssetMaintenanceResponse>(
+    `/assets/${id}/maintenance/${maintenanceId}/complete`,
+    payload
+  )
+  return data
+}
+
+export interface UpdateAssetLifecyclePayload {
+  status: 'RETIRED' | 'DISPOSED' | 'VOID' | 'LOST'
+  reason?: string
+}
+
+// PATCH /api/assets/:id/lifecycle
+export async function updateAssetLifecycle(
+  id: number | string,
+  payload: UpdateAssetLifecyclePayload
+): Promise<AssetResponse> {
+  const { data } = await api.patch<AssetResponse>(`/assets/${id}/lifecycle`, payload)
+  return data
+}
+
 export interface ConsumableListParams {
   page?: number
   limit?: number

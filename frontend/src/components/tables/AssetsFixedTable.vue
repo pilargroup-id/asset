@@ -113,7 +113,10 @@
         </div>
       </td>
       <td class="px-5 py-4 sm:px-6">
-        <ButtonUpdateAssetsFixed :asset="asset" @updated="fetchAssets(meta.page)" />
+        <div class="flex items-center gap-2">
+          <ButtonAssetHistory :asset="asset" @changed="fetchAssets(meta.page)" />
+          <ButtonUpdateAssetsFixed :asset="asset" @updated="fetchAssets(meta.page)" />
+        </div>
       </td>
     </tr>
 
@@ -140,6 +143,7 @@ import TableHeadCell from '@/components/tables/TableHeadCell.vue'
 import TablePagination from '@/components/tables/TablePagination.vue'
 import ButtonCreateAssetsFixed from '@/components/buttons/create/ButtonCreateAssetsFixed.vue'
 import ButtonUpdateAssetsFixed from '@/components/buttons/update/ButtonUpdateAssetsFixed.vue'
+import ButtonAssetHistory from '@/components/buttons/view/ButtonAssetHistory.vue'
 import { RefreshIcon } from '@/icons'
 
 const assets = ref([])
