@@ -58,7 +58,7 @@ async function listPermissions(conn = requireDb()) {
 }
 
 async function listAssignments(filters = {}, conn = requireDb()) {
-  const where = ['pa.is_active=1', 'mp.is_active=1'];
+  const where = ['mp.is_active=1'];
   const params = [];
   if (filters.subject_type) { where.push('pa.subject_type=?'); params.push(filters.subject_type); }
   if (filters.subject_id) { where.push('pa.subject_id=?'); params.push(String(filters.subject_id)); }

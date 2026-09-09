@@ -400,6 +400,12 @@ export async function createPermissionAssignment(
   return data
 }
 
+// DELETE /api/permissions/assignments/:id
+export async function deletePermissionAssignment(id: number | string): Promise<PermissionAssignmentResponse> {
+  const { data } = await api.delete<PermissionAssignmentResponse>(`/permissions/assignments/${id}`)
+  return data
+}
+
 export interface DirectoryRecord {
   id: string | number
   name?: string

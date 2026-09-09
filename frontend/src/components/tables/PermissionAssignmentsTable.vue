@@ -41,66 +41,112 @@
     </template>
 
     <template #head>
-      <TableHeadCell>Permission</TableHeadCell>
       <TableHeadCell>Subject</TableHeadCell>
       <TableHeadCell>Access</TableHeadCell>
     </template>
 
     <tr v-if="isLoading">
-      <td colspan="3" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="2" class="px-5 py-10 text-center sm:px-6">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">Loading permission assignments...</p>
       </td>
     </tr>
     <tr v-else-if="errorMessage">
-      <td colspan="3" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="2" class="px-5 py-10 text-center sm:px-6">
         <p class="text-error-600 text-theme-sm dark:text-error-500">{{ errorMessage }}</p>
       </td>
     </tr>
-    <tr v-else-if="!groupedAssignments.length">
-      <td colspan="3" class="px-5 py-10 text-center sm:px-6">
+    <tr v-else-if="!groupedBySubject.length">
+      <td colspan="2" class="px-5 py-10 text-center sm:px-6">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">No permission assignments found.</p>
       </td>
     </tr>
-    <tr
-      v-for="group in paginatedAssignments"
-      v-else
-      :key="group.key"
-      class="border-t border-gray-100 dark:border-gray-800"
-    >
-      <td class="px-5 py-4 align-top sm:px-6">
-        <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-          {{ group.permission_code }}
-        </span>
-        <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ group.permission_name }}</span>
-      </td>
-      <td class="px-5 py-4 align-top sm:px-6">
-        <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-          {{ resolveName(group.subject_type, group.subject_id) }}
-        </span>
-        <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ group.subject_type }}</span>
-      </td>
-      <td class="px-5 py-4 align-top sm:px-6">
-        <div class="flex flex-wrap gap-1.5">
-          <Badge
-            v-for="scope in group.scopes"
-            :key="scope.id"
-            :color="scope.is_active ? 'success' : 'light'"
-            size="sm"
-          >
-            {{ scopeLabel(scope) }}
-          </Badge>
-        </div>
-      </td>
-    </tr>
+    <template v-for="group in paginatedGroups" v-else :key="group.key">
+      <tr
+        class="cursor-pointer border-t border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-white/[0.03]"
+        @click="toggleGroup(group.key)"
+      >
+        <td class="px-5 py-4 align-top sm:px-6">
+          <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+            {{ group.subjectName }}
+          </span>
+          <span class="block text-gray-500 text-theme-xs dark:text-gray-400">{{ group.subject_type }}</span>
+        </td>
+        <td class="px-5 py-4 align-top sm:px-6">
+          <div class="flex items-center justify-between gap-2">
+            <Badge color="light" size="sm">
+              {{ group.permissions.length }} permission{{ group.permissions.length === 1 ? '' : 's' }}
+            </Badge>
+            <ChevronDownIcon
+              :class="[
+                'h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200',
+                { 'rotate-180': expandedKeys.has(group.key) },
+              ]"
+            />
+          </div>
+        </td>
+      </tr>
+      <tr v-if="expandedKeys.has(group.key)" class="bg-gray-50/50 dark:bg-white/[0.02]">
+        <td colspan="2" class="px-5 py-4 sm:px-6" @click.stop>
+          <div class="overflow-hidden rounded-lg border border-gray-100 dark:border-gray-800">
+            <table class="w-full text-left">
+              <thead class="bg-gray-50 dark:bg-white/[0.03]">
+                <tr>
+                  <th class="px-4 py-2.5 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Permission</th>
+                  <th class="px-4 py-2.5 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Access Scope</th>
+                  <th class="px-4 py-2.5 text-theme-xs font-medium text-gray-500 dark:text-gray-400">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 bg-white dark:divide-gray-800 dark:bg-gray-900">
+                <template v-for="perm in group.permissions" :key="perm.key">
+                  <tr v-for="scope in perm.scopes" :key="scope.id">
+                    <td class="px-4 py-3 align-top">
+                      <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
+                        {{ perm.permission_code }}
+                      </span>
+                      <span class="block text-gray-500 text-theme-xs dark:text-gray-400">
+                        {{ perm.permission_name }}
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 align-top">
+                      <Badge :color="scope.is_active ? 'success' : 'light'" size="sm">
+                        {{ scopeLabel(scope) }}
+                      </Badge>
+                    </td>
+                    <td class="px-4 py-3 align-top">
+                      <ToggleSwitch
+                        :model-value="!!scope.is_active"
+                        :disabled="togglingIds.has(scope.id)"
+                        @update:model-value="(value) => toggleScopeStatus(scope, value)"
+                      />
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-3 flex justify-end">
+            <ButtonCreatePermissionAssignments
+              compact
+              label="Add Permission"
+              :subject-type="group.subject_type"
+              :subject-id="group.subject_id"
+              :subject-label="group.subjectName"
+              :existing-permission-codes="group.permissions.map((perm) => perm.permission_code)"
+              @created="fetchAssignments"
+            />
+          </div>
+        </td>
+      </tr>
+    </template>
 
     <template #pagination>
       <TablePagination
         :page="page"
         :limit="limit"
-        :total="groupedAssignments.length"
+        :total="groupedBySubject.length"
         :total-pages="totalPages"
         :disabled="isLoading"
-        item-label="assignments"
+        item-label="subjects"
         @update:page="(value) => (page = value)"
       />
     </template>
@@ -111,6 +157,8 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import {
   getPermissionAssignments,
+  createPermissionAssignment,
+  deletePermissionAssignment,
   getDirectoryUsers,
   getDirectoryDepartments,
   getDirectoryCompanies,
@@ -119,8 +167,9 @@ import Badge from '@/components/ui/Badge.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import TableHeadCell from '@/components/tables/TableHeadCell.vue'
 import TablePagination from '@/components/tables/TablePagination.vue'
+import ToggleSwitch from '@/components/forms/FormElements/ToggleSwitch.vue'
 import ButtonCreatePermissionAssignments from '@/components/buttons/create/ButtonCreatePermissionAssignments.vue'
-import { RefreshIcon } from '@/icons'
+import { ChevronDownIcon, RefreshIcon } from '@/icons'
 
 const assignments = ref([])
 const isLoading = ref(false)
@@ -128,6 +177,40 @@ const errorMessage = ref('')
 const search = ref('')
 const page = ref(1)
 const limit = 25
+const expandedKeys = reactive(new Set())
+const togglingIds = reactive(new Set())
+
+function toggleGroup(key) {
+  if (expandedKeys.has(key)) {
+    expandedKeys.delete(key)
+  } else {
+    expandedKeys.add(key)
+  }
+}
+
+async function toggleScopeStatus(scope, nextActive) {
+  if (togglingIds.has(scope.id)) return
+  const previous = scope.is_active
+  togglingIds.add(scope.id)
+  scope.is_active = nextActive
+  try {
+    if (nextActive) {
+      await createPermissionAssignment({
+        permission_code: scope.permission_code,
+        subject_type: scope.subject_type,
+        subject_id: String(scope.subject_id),
+        access_scope_type: scope.access_scope_type,
+        access_scope_id: scope.access_scope_type === 'GLOBAL' ? '' : String(scope.access_scope_id || ''),
+      })
+    } else {
+      await deletePermissionAssignment(scope.id)
+    }
+  } catch {
+    scope.is_active = previous
+  } finally {
+    togglingIds.delete(scope.id)
+  }
+}
 
 const filteredAssignments = computed(() => {
   const term = search.value.trim().toLowerCase()
@@ -146,7 +229,7 @@ const filteredAssignments = computed(() => {
   )
 })
 
-const groupedAssignments = computed(() => {
+const permissionGroups = computed(() => {
   const groups = new Map()
   for (const assignment of filteredAssignments.value) {
     const key = `${assignment.permission_code}::${assignment.subject_type}::${assignment.subject_id}`
@@ -165,11 +248,31 @@ const groupedAssignments = computed(() => {
   return [...groups.values()]
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(groupedAssignments.value.length / limit)))
+const groupedBySubject = computed(() => {
+  const groups = new Map()
+  for (const perm of permissionGroups.value) {
+    const key = `${perm.subject_type}::${perm.subject_id}`
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        subject_type: perm.subject_type,
+        subject_id: perm.subject_id,
+        subjectName: resolveName(perm.subject_type, perm.subject_id),
+        permissions: [],
+      })
+    }
+    groups.get(key).permissions.push(perm)
+  }
+  return [...groups.values()].sort((a, b) =>
+    String(a.subjectName).localeCompare(String(b.subjectName), undefined, { sensitivity: 'base' })
+  )
+})
 
-const paginatedAssignments = computed(() => {
+const totalPages = computed(() => Math.max(1, Math.ceil(groupedBySubject.value.length / limit)))
+
+const paginatedGroups = computed(() => {
   const start = (page.value - 1) * limit
-  return groupedAssignments.value.slice(start, start + limit)
+  return groupedBySubject.value.slice(start, start + limit)
 })
 
 watch(search, () => {

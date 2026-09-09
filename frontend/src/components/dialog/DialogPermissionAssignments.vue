@@ -20,10 +20,15 @@
         </button>
 
         <h4 class="mb-1 text-xl font-semibold text-gray-800 dark:text-white/90">
-          Create Permission Assignment
+          {{ isSubjectLocked ? 'Add Permission' : 'Create Permission Assignment' }}
         </h4>
         <p class="mb-6 text-sm text-gray-500 dark:text-gray-400">
-          Grant a permission to a user, department, or company within an access scope.
+          <template v-if="isSubjectLocked">
+            Grant an additional permission to
+            <span class="font-medium text-gray-700 dark:text-gray-300">{{ lockedSubjectLabel }}</span>
+            within an access scope.
+          </template>
+          <template v-else> Grant a permission to a user, department, or company within an access scope. </template>
         </p>
 
         <form class="flex flex-col gap-5" @submit.prevent="submit">
@@ -79,15 +84,36 @@
                 <li
                   v-for="permission in filteredPermissions"
                   :key="permission.id"
-                  @click="togglePermission(permission)"
+                  @click="!isPermissionAssigned(permission) && togglePermission(permission)"
                   role="option"
                   :aria-selected="isPermissionSelected(permission)"
-                  class="flex cursor-pointer items-center justify-between px-3 py-2 hover:bg-gray-100 dark:hover:bg-white/[0.03]"
-                  :class="{ 'bg-gray-50 dark:bg-white/[0.03]': isPermissionSelected(permission) }"
+                  :aria-disabled="isPermissionAssigned(permission)"
+                  class="flex items-center justify-between px-3 py-2"
+                  :class="[
+                    isPermissionAssigned(permission)
+                      ? 'cursor-not-allowed opacity-60'
+                      : 'cursor-pointer hover:bg-gray-100 dark:hover:bg-white/[0.03]',
+                    { 'bg-gray-50 dark:bg-white/[0.03]': isPermissionSelected(permission) },
+                  ]"
                 >
                   <span class="block text-sm font-medium text-gray-800 dark:text-white/90">{{ permission.name }}</span>
+                  <span
+                    v-if="isPermissionAssigned(permission)"
+                    class="flex items-center gap-1 text-xs font-medium text-gray-400 dark:text-gray-500"
+                  >
+                    <svg
+                      class="h-4 w-4 shrink-0"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Added
+                  </span>
                   <svg
-                    v-if="isPermissionSelected(permission)"
+                    v-else-if="isPermissionSelected(permission)"
                     class="h-4 w-4 shrink-0 text-brand-500"
                     fill="none"
                     stroke="currentColor"
@@ -101,7 +127,12 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div v-if="isSubjectLocked" class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-white/[0.03]">
+            <span class="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">Subject</span>
+            <span class="block text-sm font-medium text-gray-800 dark:text-white/90">{{ lockedSubjectLabel }}</span>
+            <span class="block text-xs text-gray-500 dark:text-gray-400">{{ lockedSubjectType }}</span>
+          </div>
+          <div v-else class="grid grid-cols-2 gap-4">
             <div ref="subjectTypeDropdownRef" class="relative">
               <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                 Subject Type
@@ -276,7 +307,33 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  lockedSubjectType: {
+    type: String,
+    default: '',
+  },
+  lockedSubjectId: {
+    type: String,
+    default: '',
+  },
+  lockedSubjectLabel: {
+    type: String,
+    default: '',
+  },
+  existingPermissionCodes: {
+    type: Array,
+    default: () => [],
+  },
 })
+
+const isSubjectLocked = computed(() => !!(props.lockedSubjectType && props.lockedSubjectId))
+
+const existingPermissionCodeSet = computed(
+  () => new Set(props.existingPermissionCodes.map((code) => String(code)))
+)
+
+function isPermissionAssigned(permission) {
+  return existingPermissionCodeSet.value.has(String(permission.code))
+}
 
 const emit = defineEmits(['close', 'created'])
 
@@ -437,6 +494,7 @@ function selectSubject(item) {
 watch(
   () => form.subject_type,
   (type) => {
+    if (isSubjectLocked.value) return
     form.subject_id = ''
     subjectQuery.value = ''
     isSubjectDropdownOpen.value = false
@@ -533,7 +591,12 @@ watch(
   (open) => {
     if (open) {
       loadPermissions()
-      loadSubjects(form.subject_type)
+      if (isSubjectLocked.value) {
+        form.subject_type = props.lockedSubjectType
+        form.subject_id = props.lockedSubjectId
+      } else {
+        loadSubjects(form.subject_type)
+      }
     } else {
       resetForm()
     }
