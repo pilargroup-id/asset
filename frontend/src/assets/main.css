@@ -171,11 +171,13 @@ layer(base);
 }
 
 .sidebar-gradient-bg {
-  background: linear-gradient(180deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+  background-image: linear-gradient(180deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 .avatar-badge {
-  background: linear-gradient(135deg, rgba(233, 196, 106, 0.28) 0%, rgba(42, 157, 143, 0.42) 100%);
+  background: var(--accent-teal);
 }
 
 .status-dot-online {

@@ -1,17 +1,17 @@
 <template>
   <div class="relative" ref="dropdownRef">
     <button
-      class="flex items-center text-gray-700 dark:text-gray-400"
+      class="flex items-center text-white"
       @click.prevent="toggleDropdown"
     >
       <span class="relative mr-3 flex h-11 w-11 shrink-0 items-center justify-center">
         <span
-          class="avatar-badge flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold text-gray-800 dark:text-white"
+          class="avatar-badge flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold text-white ring-1 ring-white/20"
         >
           {{ initials }}
         </span>
         <span
-          class="status-dot-online absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-white dark:ring-gray-dark"
+          class="status-dot-online absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ring-2 ring-[#1a2a57]"
         ></span>
       </span>
 
