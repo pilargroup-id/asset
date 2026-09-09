@@ -27,21 +27,6 @@
         </span>
       </div>
 
-      <ul class="flex flex-col gap-1 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800">
-        <li v-for="item in menuItems" :key="item.href">
-          <router-link
-            :to="item.href"
-            class="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-gray-300"
-          >
-            <!-- SVG icon would go here -->
-            <component
-              :is="item.icon"
-              class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
-            />
-            {{ item.text }}
-          </router-link>
-        </li>
-      </ul>
       <router-link
         to="/signin"
         @click="signOut"
@@ -50,7 +35,7 @@
         <LogoutIcon
           class="text-gray-500 group-hover:text-gray-700 dark:group-hover:text-gray-300"
         />
-        Sign out
+        Back Pilargroup
       </router-link>
     </div>
     <!-- Dropdown End -->
@@ -58,7 +43,7 @@
 </template>
 
 <script setup>
-import { UserCircleIcon, ChevronDownIcon, LogoutIcon, SettingsIcon, InfoCircleIcon } from '@/icons'
+import { UserCircleIcon, ChevronDownIcon, LogoutIcon } from '@/icons'
 import { RouterLink } from 'vue-router'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { authState, fetchCurrentUser, getDisplayName, getDisplayEmail, logout } from '@/service/auth'
@@ -68,12 +53,6 @@ const dropdownRef = ref(null)
 
 const displayName = computed(() => getDisplayName(authState.user))
 const displayEmail = computed(() => getDisplayEmail(authState.user))
-
-const menuItems = [
-  { href: '/profile', icon: UserCircleIcon, text: 'Edit profile' },
-  { href: '/chat', icon: SettingsIcon, text: 'Account settings' },
-  { href: '/profile', icon: InfoCircleIcon, text: 'Support' },
-]
 
 const toggleDropdown = () => {
   dropdownOpen.value = !dropdownOpen.value

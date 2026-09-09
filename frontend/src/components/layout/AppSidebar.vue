@@ -19,20 +19,21 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/" class="flex items-center gap-3">
+      <router-link to="/" class="flex items-center">
         <img
-          src="/images/logo/logo-piagam.svg"
-          alt="Logo"
-          width="52"
-          height="52"
-          class="shrink-0"
-        />
-        <span
           v-if="isExpanded || isHovered || isMobileOpen"
-          class="bg-gradient-to-r from-[#caa14a] to-[#8a6a1f] bg-clip-text text-2xl font-extrabold tracking-tight text-transparent dark:from-[#f3dfa0] dark:to-[#caa14a]"
-        >
-          Asset
-        </span>
+          src="/images/logo/logo-piagam2.svg"
+          alt="Piagam Logo"
+          class="h-16 w-auto max-w-[240px] object-contain shrink-0"
+        />
+        <img
+          v-else
+          src="/images/logo/logo-piagam.svg"
+          alt="Piagam Logo"
+          width="48"
+          height="48"
+          class="shrink-0 object-contain"
+        />
       </router-link>
     </div>
     <div

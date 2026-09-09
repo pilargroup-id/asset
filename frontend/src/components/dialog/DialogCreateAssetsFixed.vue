@@ -47,9 +47,70 @@
               <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                 Category *
               </label>
-              <SelectField v-model="form.category_id" placeholder="Select category">
-                <option v-for="item in categories" :key="item.id" :value="item.id">{{ item.name }}</option>
-              </SelectField>
+
+              <div ref="categoryDropdownRef" class="relative">
+                <div class="relative">
+                  <input
+                    v-model="categoryQuery"
+                    type="text"
+                    placeholder="Search or create category"
+                    autocomplete="off"
+                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    @focus="isCategoryDropdownOpen = true"
+                    @keydown.enter.prevent="handleCategoryEnter"
+                    @keydown.esc="isCategoryDropdownOpen = false"
+                  />
+                  <ChevronDownIcon
+                    class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700 transition-transform dark:text-gray-400"
+                    :class="{ 'rotate-180': isCategoryDropdownOpen }"
+                  />
+                </div>
+
+                <transition
+                  enter-active-class="transition duration-100 ease-out"
+                  enter-from-class="transform scale-95 opacity-0"
+                  enter-to-class="transform scale-100 opacity-100"
+                  leave-active-class="transition duration-75 ease-in"
+                  leave-from-class="transform scale-100 opacity-100"
+                  leave-to-class="transform scale-95 opacity-0"
+                >
+                  <div
+                    v-if="isCategoryDropdownOpen"
+                    class="absolute z-10 mt-1 w-full rounded-lg bg-white shadow-lg dark:bg-gray-900"
+                  >
+                    <ul
+                      class="custom-scrollbar max-h-60 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800"
+                      role="listbox"
+                    >
+                      <li
+                        v-for="item in filteredCategoryOptions"
+                        :key="item.id"
+                        @click="selectCategory(item)"
+                        class="cursor-pointer px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                        :class="String(form.category_id) === String(item.id) ? 'bg-gray-50 text-gray-800 dark:bg-white/[0.03] dark:text-white/90' : 'text-gray-500 dark:text-gray-400'"
+                      >
+                        {{ item.name }}
+                      </li>
+                      <li
+                        v-if="showCreateCategoryOption"
+                        @click="createCategoryFromQuery"
+                        class="cursor-pointer rounded-b-lg px-3 py-2 text-sm font-medium text-brand-500 hover:bg-brand-50 dark:hover:bg-white/[0.03]"
+                      >
+                        {{ isCreatingCategory ? 'Creating...' : `+ Create "${categoryQuery.trim()}"` }}
+                      </li>
+                      <li
+                        v-else-if="!filteredCategoryOptions.length && categoryQuery.trim()"
+                        class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500"
+                      >
+                        No matches
+                      </li>
+                    </ul>
+                  </div>
+                </transition>
+              </div>
+              <p v-if="categoryError" class="mt-1.5 text-xs text-error-600 dark:text-error-500">
+                {{ categoryError }}
+              </p>
             </div>
             <div>
               <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
@@ -148,9 +209,70 @@
               <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                 Brand
               </label>
-              <SelectField v-model="form.brand_id" placeholder="Select brand">
-                <option v-for="item in brands" :key="item.id" :value="item.id">{{ item.name }}</option>
-              </SelectField>
+
+              <div ref="brandDropdownRef" class="relative">
+                <div class="relative">
+                  <input
+                    v-model="brandQuery"
+                    type="text"
+                    placeholder="Search or create brand"
+                    autocomplete="off"
+                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    @focus="isBrandDropdownOpen = true"
+                    @keydown.enter.prevent="handleBrandEnter"
+                    @keydown.esc="isBrandDropdownOpen = false"
+                  />
+                  <ChevronDownIcon
+                    class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700 transition-transform dark:text-gray-400"
+                    :class="{ 'rotate-180': isBrandDropdownOpen }"
+                  />
+                </div>
+
+                <transition
+                  enter-active-class="transition duration-100 ease-out"
+                  enter-from-class="transform scale-95 opacity-0"
+                  enter-to-class="transform scale-100 opacity-100"
+                  leave-active-class="transition duration-75 ease-in"
+                  leave-from-class="transform scale-100 opacity-100"
+                  leave-to-class="transform scale-95 opacity-0"
+                >
+                  <div
+                    v-if="isBrandDropdownOpen"
+                    class="absolute z-10 mt-1 w-full rounded-lg bg-white shadow-lg dark:bg-gray-900"
+                  >
+                    <ul
+                      class="custom-scrollbar max-h-60 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800"
+                      role="listbox"
+                    >
+                      <li
+                        v-for="item in filteredBrandOptions"
+                        :key="item.id"
+                        @click="selectBrand(item)"
+                        class="cursor-pointer px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                        :class="String(form.brand_id) === String(item.id) ? 'bg-gray-50 text-gray-800 dark:bg-white/[0.03] dark:text-white/90' : 'text-gray-500 dark:text-gray-400'"
+                      >
+                        {{ item.name }}
+                      </li>
+                      <li
+                        v-if="showCreateBrandOption"
+                        @click="createBrandFromQuery"
+                        class="cursor-pointer rounded-b-lg px-3 py-2 text-sm font-medium text-brand-500 hover:bg-brand-50 dark:hover:bg-white/[0.03]"
+                      >
+                        {{ isCreatingBrand ? 'Creating...' : `+ Create "${brandQuery.trim()}"` }}
+                      </li>
+                      <li
+                        v-else-if="!filteredBrandOptions.length && brandQuery.trim()"
+                        class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500"
+                      >
+                        No matches
+                      </li>
+                    </ul>
+                  </div>
+                </transition>
+              </div>
+              <p v-if="brandError" class="mt-1.5 text-xs text-error-600 dark:text-error-500">
+                {{ brandError }}
+              </p>
             </div>
             <div>
               <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
@@ -202,9 +324,70 @@
               <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
                 Vendor
               </label>
-              <SelectField v-model="form.vendor_id" placeholder="Select vendor">
-                <option v-for="item in vendors" :key="item.id" :value="item.id">{{ item.name }}</option>
-              </SelectField>
+
+              <div ref="vendorDropdownRef" class="relative">
+                <div class="relative">
+                  <input
+                    v-model="vendorQuery"
+                    type="text"
+                    placeholder="Search or create vendor"
+                    autocomplete="off"
+                    class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
+                    @focus="isVendorDropdownOpen = true"
+                    @keydown.enter.prevent="handleVendorEnter"
+                    @keydown.esc="isVendorDropdownOpen = false"
+                  />
+                  <ChevronDownIcon
+                    class="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-700 transition-transform dark:text-gray-400"
+                    :class="{ 'rotate-180': isVendorDropdownOpen }"
+                  />
+                </div>
+
+                <transition
+                  enter-active-class="transition duration-100 ease-out"
+                  enter-from-class="transform scale-95 opacity-0"
+                  enter-to-class="transform scale-100 opacity-100"
+                  leave-active-class="transition duration-75 ease-in"
+                  leave-from-class="transform scale-100 opacity-100"
+                  leave-to-class="transform scale-95 opacity-0"
+                >
+                  <div
+                    v-if="isVendorDropdownOpen"
+                    class="absolute z-10 mt-1 w-full rounded-lg bg-white shadow-lg dark:bg-gray-900"
+                  >
+                    <ul
+                      class="custom-scrollbar max-h-60 divide-y divide-gray-100 overflow-y-auto dark:divide-gray-800"
+                      role="listbox"
+                    >
+                      <li
+                        v-for="item in filteredVendorOptions"
+                        :key="item.id"
+                        @click="selectVendor(item)"
+                        class="cursor-pointer px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/[0.03]"
+                        :class="String(form.vendor_id) === String(item.id) ? 'bg-gray-50 text-gray-800 dark:bg-white/[0.03] dark:text-white/90' : 'text-gray-500 dark:text-gray-400'"
+                      >
+                        {{ item.name }}
+                      </li>
+                      <li
+                        v-if="showCreateVendorOption"
+                        @click="createVendorFromQuery"
+                        class="cursor-pointer rounded-b-lg px-3 py-2 text-sm font-medium text-brand-500 hover:bg-brand-50 dark:hover:bg-white/[0.03]"
+                      >
+                        {{ isCreatingVendor ? 'Creating...' : `+ Create "${vendorQuery.trim()}"` }}
+                      </li>
+                      <li
+                        v-else-if="!filteredVendorOptions.length && vendorQuery.trim()"
+                        class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500"
+                      >
+                        No matches
+                      </li>
+                    </ul>
+                  </div>
+                </transition>
+              </div>
+              <p v-if="vendorError" class="mt-1.5 text-xs text-error-600 dark:text-error-500">
+                {{ vendorError }}
+              </p>
             </div>
             <div>
               <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
@@ -296,8 +479,10 @@
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import Modal from '@/components/ui/Modal.vue'
 import SelectField from '@/components/forms/FormElements/SelectField.vue'
+import { ChevronDownIcon } from '@/icons'
 import {
   getMasterData,
+  createMasterData,
   createAsset,
   updateAsset,
   getDirectoryDepartments,
@@ -344,6 +529,235 @@ const vendors = ref([])
 const filteredModels = computed(() =>
   form.brand_id ? models.value.filter((m) => String(m.brand_id) === String(form.brand_id)) : models.value
 )
+
+function slugifyCode(value) {
+  const base = (value || '')
+    .toString()
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 30)
+  return base || `CODE-${Date.now().toString(36).toUpperCase()}`
+}
+
+const categoryQuery = ref('')
+const isCategoryDropdownOpen = ref(false)
+const categoryDropdownRef = ref(null)
+const isCreatingCategory = ref(false)
+const categoryError = ref('')
+
+const selectedCategoryLabel = computed(() => {
+  const item = categories.value.find((c) => String(c.id) === String(form.category_id))
+  return item ? item.name : ''
+})
+
+const filteredCategoryOptions = computed(() => {
+  const q = categoryQuery.value.trim().toLowerCase()
+  if (!q) return categories.value
+  return categories.value.filter((item) =>
+    [item.name, item.code].filter(Boolean).some((v) => String(v).toLowerCase().includes(q))
+  )
+})
+
+const showCreateCategoryOption = computed(() => {
+  const q = categoryQuery.value.trim()
+  if (!q) return false
+  return !categories.value.some((item) => item.name.toLowerCase() === q.toLowerCase())
+})
+
+watch(selectedCategoryLabel, (label) => {
+  if (!isCategoryDropdownOpen.value) categoryQuery.value = label
+})
+
+watch(isCategoryDropdownOpen, (open) => {
+  if (!open) categoryQuery.value = selectedCategoryLabel.value
+})
+
+function selectCategory(item) {
+  form.category_id = item.id
+  categoryQuery.value = item.name
+  isCategoryDropdownOpen.value = false
+}
+
+function handleCategoryEnter() {
+  if (showCreateCategoryOption.value) {
+    createCategoryFromQuery()
+  } else if (filteredCategoryOptions.value.length === 1) {
+    selectCategory(filteredCategoryOptions.value[0])
+  }
+}
+
+async function createCategoryFromQuery() {
+  const name = categoryQuery.value.trim()
+  if (!name) return
+
+  isCreatingCategory.value = true
+  categoryError.value = ''
+  try {
+    const data = await createMasterData('categories', {
+      code: slugifyCode(name),
+      name,
+      tracking_type: 'SERIALIZED_ASSET',
+      is_active: true,
+    })
+    const newCategory = data?.data
+    if (newCategory) {
+      categories.value = [...categories.value, newCategory]
+      form.category_id = newCategory.id
+      categoryQuery.value = newCategory.name
+    }
+    isCategoryDropdownOpen.value = false
+  } catch (err) {
+    categoryError.value = err?.response?.data?.message || 'Failed to create category.'
+  } finally {
+    isCreatingCategory.value = false
+  }
+}
+
+const brandQuery = ref('')
+const isBrandDropdownOpen = ref(false)
+const brandDropdownRef = ref(null)
+const isCreatingBrand = ref(false)
+const brandError = ref('')
+
+const selectedBrandLabel = computed(() => {
+  const item = brands.value.find((b) => String(b.id) === String(form.brand_id))
+  return item ? item.name : ''
+})
+
+const filteredBrandOptions = computed(() => {
+  const q = brandQuery.value.trim().toLowerCase()
+  if (!q) return brands.value
+  return brands.value.filter((item) =>
+    [item.name, item.code].filter(Boolean).some((v) => String(v).toLowerCase().includes(q))
+  )
+})
+
+const showCreateBrandOption = computed(() => {
+  const q = brandQuery.value.trim()
+  if (!q) return false
+  return !brands.value.some((item) => item.name.toLowerCase() === q.toLowerCase())
+})
+
+watch(selectedBrandLabel, (label) => {
+  if (!isBrandDropdownOpen.value) brandQuery.value = label
+})
+
+watch(isBrandDropdownOpen, (open) => {
+  if (!open) brandQuery.value = selectedBrandLabel.value
+})
+
+function selectBrand(item) {
+  form.brand_id = item.id
+  brandQuery.value = item.name
+  isBrandDropdownOpen.value = false
+}
+
+function handleBrandEnter() {
+  if (showCreateBrandOption.value) {
+    createBrandFromQuery()
+  } else if (filteredBrandOptions.value.length === 1) {
+    selectBrand(filteredBrandOptions.value[0])
+  }
+}
+
+async function createBrandFromQuery() {
+  const name = brandQuery.value.trim()
+  if (!name) return
+
+  isCreatingBrand.value = true
+  brandError.value = ''
+  try {
+    const data = await createMasterData('brands', {
+      name,
+      is_active: true,
+    })
+    const newBrand = data?.data
+    if (newBrand) {
+      brands.value = [...brands.value, newBrand]
+      form.brand_id = newBrand.id
+      brandQuery.value = newBrand.name
+    }
+    isBrandDropdownOpen.value = false
+  } catch (err) {
+    brandError.value = err?.response?.data?.message || 'Failed to create brand.'
+  } finally {
+    isCreatingBrand.value = false
+  }
+}
+
+const vendorQuery = ref('')
+const isVendorDropdownOpen = ref(false)
+const vendorDropdownRef = ref(null)
+const isCreatingVendor = ref(false)
+const vendorError = ref('')
+
+const selectedVendorLabel = computed(() => {
+  const item = vendors.value.find((v) => String(v.id) === String(form.vendor_id))
+  return item ? item.name : ''
+})
+
+const filteredVendorOptions = computed(() => {
+  const q = vendorQuery.value.trim().toLowerCase()
+  if (!q) return vendors.value
+  return vendors.value.filter((item) =>
+    [item.name, item.code].filter(Boolean).some((v) => String(v).toLowerCase().includes(q))
+  )
+})
+
+const showCreateVendorOption = computed(() => {
+  const q = vendorQuery.value.trim()
+  if (!q) return false
+  return !vendors.value.some((item) => item.name.toLowerCase() === q.toLowerCase())
+})
+
+watch(selectedVendorLabel, (label) => {
+  if (!isVendorDropdownOpen.value) vendorQuery.value = label
+})
+
+watch(isVendorDropdownOpen, (open) => {
+  if (!open) vendorQuery.value = selectedVendorLabel.value
+})
+
+function selectVendor(item) {
+  form.vendor_id = item.id
+  vendorQuery.value = item.name
+  isVendorDropdownOpen.value = false
+}
+
+function handleVendorEnter() {
+  if (showCreateVendorOption.value) {
+    createVendorFromQuery()
+  } else if (filteredVendorOptions.value.length === 1) {
+    selectVendor(filteredVendorOptions.value[0])
+  }
+}
+
+async function createVendorFromQuery() {
+  const name = vendorQuery.value.trim()
+  if (!name) return
+
+  isCreatingVendor.value = true
+  vendorError.value = ''
+  try {
+    const data = await createMasterData('vendors', {
+      name,
+      is_active: true,
+    })
+    const newVendor = data?.data
+    if (newVendor) {
+      vendors.value = [...vendors.value, newVendor]
+      form.vendor_id = newVendor.id
+      vendorQuery.value = newVendor.name
+    }
+    isVendorDropdownOpen.value = false
+  } catch (err) {
+    vendorError.value = err?.response?.data?.message || 'Failed to create vendor.'
+  } finally {
+    isCreatingVendor.value = false
+  }
+}
 
 const form = reactive({
   asset_name: '',
@@ -466,6 +880,15 @@ function handleClickOutside(event) {
   if (company.containerRef.value && !company.containerRef.value.contains(event.target)) {
     company.closeAndSync()
   }
+  if (categoryDropdownRef.value && !categoryDropdownRef.value.contains(event.target)) {
+    isCategoryDropdownOpen.value = false
+  }
+  if (brandDropdownRef.value && !brandDropdownRef.value.contains(event.target)) {
+    isBrandDropdownOpen.value = false
+  }
+  if (vendorDropdownRef.value && !vendorDropdownRef.value.contains(event.target)) {
+    isVendorDropdownOpen.value = false
+  }
 }
 
 onMounted(() => document.addEventListener('click', handleClickOutside))
@@ -533,6 +956,15 @@ function resetForm() {
   errorMessage.value = ''
   department.reset()
   company.reset()
+  categoryQuery.value = ''
+  categoryError.value = ''
+  isCategoryDropdownOpen.value = false
+  brandQuery.value = ''
+  brandError.value = ''
+  isBrandDropdownOpen.value = false
+  vendorQuery.value = ''
+  vendorError.value = ''
+  isVendorDropdownOpen.value = false
 }
 
 watch(
