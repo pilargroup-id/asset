@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { filenameFromDisposition } from '@/utils/download'
 
 const baseURL = import.meta.env.VITE_API_BASE_URL
 
@@ -849,4 +850,427 @@ export interface ActivityLogListResponse {
 export async function getActivityLogs(params: ActivityLogParams = {}): Promise<ActivityLogListResponse> {
   const { data } = await api.get<ActivityLogListResponse>('/activity-logs', { params })
   return data
+}
+
+// ---------------------------------------------------------------------------
+// Depreciation
+// ---------------------------------------------------------------------------
+
+export type DepreciationMethod = 'STRAIGHT_LINE' | 'DECLINING_BALANCE' | 'MANUAL'
+export type SalvageValueType = 'FIXED' | 'PERCENT'
+
+export interface DepreciationPolicyRecord {
+  id: number
+  managing_department_id: string
+  company_id?: string | null
+  name: string
+  method: DepreciationMethod
+  useful_life_months: number
+  salvage_value_type: SalvageValueType
+  salvage_value: number | string
+  is_active?: number | boolean
+  created_by?: string | null
+  created_at?: string
+  [key: string]: unknown
+}
+
+export interface DepreciationPolicyListResponse {
+  success: boolean
+  message: string
+  data: DepreciationPolicyRecord[]
+}
+
+// GET /api/depreciation/policies
+export async function getDepreciationPolicies(): Promise<DepreciationPolicyListResponse> {
+  const { data } = await api.get<DepreciationPolicyListResponse>('/depreciation/policies')
+  return data
+}
+
+export interface DepreciationPolicyPayload {
+  managing_department_id?: number | string
+  company_id?: string
+  name: string
+  method?: DepreciationMethod
+  useful_life_months: number
+  salvage_value_type?: SalvageValueType
+  salvage_value?: number
+  is_active?: boolean
+}
+
+export interface DepreciationPolicyResponse {
+  success: boolean
+  message: string
+  data: DepreciationPolicyRecord
+}
+
+// POST /api/depreciation/policies
+export async function createDepreciationPolicy(
+  payload: DepreciationPolicyPayload
+): Promise<DepreciationPolicyResponse> {
+  const { data } = await api.post<DepreciationPolicyResponse>('/depreciation/policies', payload)
+  return data
+}
+
+// PUT /api/depreciation/policies/:id
+export async function updateDepreciationPolicy(
+  id: number | string,
+  payload: Partial<DepreciationPolicyPayload>
+): Promise<DepreciationPolicyResponse> {
+  const { data } = await api.put<DepreciationPolicyResponse>(`/depreciation/policies/${id}`, payload)
+  return data
+}
+
+export interface CategoryDepreciationDefaultPayload {
+  category_id: number | string
+  managing_department_id: number | string
+  company_id?: string
+  depreciation_policy_id: number | string
+}
+
+export interface CategoryDepreciationDefaultRecord {
+  category_id: number
+  managing_department_id: string
+  company_id?: string | null
+  depreciation_policy_id: number
+  policy_name?: string
+  method?: DepreciationMethod
+  useful_life_months?: number
+  salvage_value_type?: SalvageValueType
+  salvage_value?: number | string
+  [key: string]: unknown
+}
+
+export interface CategoryDepreciationDefaultResponse {
+  success: boolean
+  message: string
+  data: CategoryDepreciationDefaultRecord
+}
+
+// PUT /api/depreciation/category-default
+export async function setCategoryDepreciationDefault(
+  payload: CategoryDepreciationDefaultPayload
+): Promise<CategoryDepreciationDefaultResponse> {
+  const { data } = await api.put<CategoryDepreciationDefaultResponse>('/depreciation/category-default', payload)
+  return data
+}
+
+export interface DepreciationSuggestionResponse {
+  success: boolean
+  message: string
+  data: CategoryDepreciationDefaultRecord | null
+}
+
+// GET /api/depreciation/assets/:assetId/suggestion
+export async function getDepreciationSuggestion(assetId: number | string): Promise<DepreciationSuggestionResponse> {
+  const { data } = await api.get<DepreciationSuggestionResponse>(`/depreciation/assets/${assetId}/suggestion`)
+  return data
+}
+
+export interface AssetDepreciationConfigRecord {
+  id: number
+  asset_id: number
+  depreciation_policy_id?: number | null
+  purchase_cost_snapshot: number | string
+  depreciation_method: DepreciationMethod
+  useful_life_months: number
+  salvage_value_type: SalvageValueType
+  salvage_value: number | string
+  depreciation_start_date: string
+  is_active?: number | boolean
+  created_by?: string | null
+  created_at?: string
+  [key: string]: unknown
+}
+
+export interface AssetDepreciationLedgerRecord {
+  id: number
+  asset_id: number
+  period_year: number
+  period_month: number
+  opening_book_value: number | string
+  depreciation_amount: number | string
+  accumulated_depreciation: number | string
+  closing_book_value: number | string
+  calculation_method: string
+  is_final?: number | boolean
+  generated_by?: string | null
+  generated_at?: string
+  [key: string]: unknown
+}
+
+export interface AssetDepreciationRevisionRecord {
+  id: number
+  asset_id: number
+  effective_date: string
+  old_values: Record<string, unknown> | string
+  new_values: Record<string, unknown> | string
+  reason: string
+  changed_by: string
+  created_at?: string
+  [key: string]: unknown
+}
+
+export interface AssetDepreciationData {
+  asset: AssetRecord
+  config: AssetDepreciationConfigRecord | null
+  revisions: AssetDepreciationRevisionRecord[]
+  ledger: AssetDepreciationLedgerRecord[]
+}
+
+export interface AssetDepreciationResponse {
+  success: boolean
+  message: string
+  data: AssetDepreciationData
+}
+
+// GET /api/depreciation/assets/:assetId
+export async function getAssetDepreciation(assetId: number | string): Promise<AssetDepreciationResponse> {
+  const { data } = await api.get<AssetDepreciationResponse>(`/depreciation/assets/${assetId}`)
+  return data
+}
+
+export interface ConfigureAssetDepreciationPayload {
+  depreciation_policy_id?: number | string
+  depreciation_method?: DepreciationMethod
+  useful_life_months?: number
+  salvage_value_type?: SalvageValueType
+  salvage_value?: number
+  depreciation_start_date?: string
+}
+
+export interface AssetDepreciationConfigResponse {
+  success: boolean
+  message: string
+  data: AssetDepreciationConfigRecord
+}
+
+// PUT /api/depreciation/assets/:assetId/config
+export async function configureAssetDepreciation(
+  assetId: number | string,
+  payload: ConfigureAssetDepreciationPayload
+): Promise<AssetDepreciationConfigResponse> {
+  const { data } = await api.put<AssetDepreciationConfigResponse>(`/depreciation/assets/${assetId}/config`, payload)
+  return data
+}
+
+export interface ReviseAssetDepreciationPayload {
+  effective_date: string
+  reason: string
+  depreciation_method?: DepreciationMethod
+  useful_life_months?: number
+  salvage_value_type?: SalvageValueType
+  salvage_value?: number
+  depreciation_start_date?: string
+}
+
+// POST /api/depreciation/assets/:assetId/revisions
+export async function reviseAssetDepreciation(
+  assetId: number | string,
+  payload: ReviseAssetDepreciationPayload
+): Promise<AssetDepreciationConfigResponse> {
+  const { data } = await api.post<AssetDepreciationConfigResponse>(`/depreciation/assets/${assetId}/revisions`, payload)
+  return data
+}
+
+export interface GenerateDepreciationLedgerPayload {
+  through_date?: string
+}
+
+export interface AssetDepreciationLedgerListResponse {
+  success: boolean
+  message: string
+  data: AssetDepreciationLedgerRecord[]
+}
+
+// POST /api/depreciation/assets/:assetId/generate
+export async function generateDepreciationLedger(
+  assetId: number | string,
+  payload: GenerateDepreciationLedgerPayload = {}
+): Promise<AssetDepreciationLedgerListResponse> {
+  const { data } = await api.post<AssetDepreciationLedgerListResponse>(`/depreciation/assets/${assetId}/generate`, payload)
+  return data
+}
+
+export interface FinalizeDepreciationPayload {
+  period_year: number
+  period_month: number
+}
+
+export interface FinalizeDepreciationResponse {
+  success: boolean
+  message: string
+  data: { finalized: boolean; period_year: number; period_month: number }
+}
+
+// PATCH /api/depreciation/assets/:assetId/finalize
+export async function finalizeDepreciationPeriod(
+  assetId: number | string,
+  payload: FinalizeDepreciationPayload
+): Promise<FinalizeDepreciationResponse> {
+  const { data } = await api.patch<FinalizeDepreciationResponse>(`/depreciation/assets/${assetId}/finalize`, payload)
+  return data
+}
+
+// ---------------------------------------------------------------------------
+// Import
+// ---------------------------------------------------------------------------
+
+export type ImportType =
+  | 'ASSET'
+  | 'CONSUMABLE'
+  | 'CONSUMABLE_OPENING_STOCK'
+  | 'CATEGORY'
+  | 'LOCATION'
+  | 'VENDOR'
+  | 'BRAND'
+  | 'MODEL'
+  | 'DEPRECIATION_POLICY'
+
+export interface ImportPreviewRowRecord {
+  source_row: number
+  action: 'CREATE' | 'UPDATE' | 'OPENING_BALANCE'
+  status: 'VALID' | 'WARNING' | 'INVALID' | 'FAILED'
+  errors: string[]
+  warnings: string[]
+  original: Record<string, unknown>
+  entity_id?: number | string
+  reference?: string
+  [key: string]: unknown
+}
+
+export interface ImportPreviewSummary {
+  total: number
+  valid: number
+  warnings: number
+  invalid: number
+}
+
+export interface ImportPreviewData {
+  preview_token: string
+  import_reference: string
+  import_type: ImportType
+  original_filename: string
+  expires_at?: string
+  summary: ImportPreviewSummary
+  rows: ImportPreviewRowRecord[]
+}
+
+export interface ImportPreviewResponse {
+  success: boolean
+  message: string
+  data: ImportPreviewData
+}
+
+// POST /api/import/:type/preview
+export async function previewImport(type: ImportType, file: File): Promise<ImportPreviewResponse> {
+  const form = new FormData()
+  form.append('file', file)
+  // Content-Type must be cleared (not set to 'multipart/form-data') so the browser
+  // generates the multipart boundary itself instead of inheriting this instance's
+  // default 'application/json' header, which would otherwise corrupt the upload.
+  const { data } = await api.post<ImportPreviewResponse>(`/import/${type}/preview`, form, {
+    headers: { 'Content-Type': undefined },
+  })
+  return data
+}
+
+// GET /api/import/preview/:previewToken
+export async function getImportPreview(previewToken: string): Promise<ImportPreviewResponse> {
+  const { data } = await api.get<ImportPreviewResponse>(`/import/preview/${previewToken}`)
+  return data
+}
+
+export interface ImportCommitResultRecord {
+  source_row: number
+  action: string
+  entity_id?: number | string
+  reference?: string
+  changed?: boolean
+}
+
+export interface ImportCommitData {
+  import_reference: string
+  import_type: ImportType
+  summary: { total: number; success: number; failed: number }
+  successes: ImportCommitResultRecord[]
+  error_file_token: string | null
+}
+
+export interface ImportCommitResponse {
+  success: boolean
+  message: string
+  data: ImportCommitData
+}
+
+// POST /api/import/commit
+export async function commitImport(previewToken: string): Promise<ImportCommitResponse> {
+  const { data } = await api.post<ImportCommitResponse>('/import/commit', { preview_token: previewToken })
+  return data
+}
+
+// DELETE /api/import/preview/:previewToken
+export async function cancelImportPreview(
+  previewToken: string
+): Promise<{ success: boolean; message: string; data: unknown }> {
+  const { data } = await api.delete(`/import/preview/${previewToken}`)
+  return data
+}
+
+export interface DownloadedFile {
+  blob: Blob
+  filename: string
+}
+
+// GET /api/import/templates/:type
+export async function downloadImportTemplate(type: ImportType): Promise<DownloadedFile> {
+  const response = await api.get(`/import/templates/${type}`, { responseType: 'blob' })
+  return {
+    blob: response.data,
+    filename: filenameFromDisposition(
+      response.headers['content-disposition'],
+      `asset-${type.toLowerCase()}-import-template.xlsx`
+    ),
+  }
+}
+
+// GET /api/import/errors/:errorFileToken
+export async function downloadImportErrors(errorFileToken: string): Promise<DownloadedFile> {
+  const response = await api.get(`/import/errors/${errorFileToken}`, { responseType: 'blob' })
+  return {
+    blob: response.data,
+    filename: filenameFromDisposition(response.headers['content-disposition'], `asset-import-errors.xlsx`),
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Export / Reports
+// ---------------------------------------------------------------------------
+
+export type ExportType =
+  | 'ASSET_LIST'
+  | 'ASSIGNMENTS'
+  | 'TRANSFERS'
+  | 'MAINTENANCE'
+  | 'DEPRECIATION'
+  | 'CONSUMABLE_STOCK'
+  | 'CONSUMABLE_MOVEMENTS'
+  | 'CONSUMABLE_USAGE'
+  | 'ACTIVITY_LOG'
+
+export interface ExportedFile extends DownloadedFile {
+  rowCount: number | null
+}
+
+// GET /api/export/:type
+export async function exportData(type: ExportType): Promise<ExportedFile> {
+  const response = await api.get(`/export/${type}`, { responseType: 'blob' })
+  const rowCountHeader = response.headers['x-export-row-count']
+  return {
+    blob: response.data,
+    filename: filenameFromDisposition(
+      response.headers['content-disposition'],
+      `asset-${type.toLowerCase()}-export.xlsx`
+    ),
+    rowCount: rowCountHeader ? Number(rowCountHeader) : null,
+  }
 }

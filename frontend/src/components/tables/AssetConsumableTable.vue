@@ -42,13 +42,13 @@
     </template>
 
     <template #head>
+      <TableHeadCell>Action</TableHeadCell>
       <TableHeadCell>Consumable</TableHeadCell>
       <TableHeadCell>Category</TableHeadCell>
       <TableHeadCell>Brand / Variant</TableHeadCell>
       <TableHeadCell>UOM</TableHeadCell>
       <TableHeadCell>Stock</TableHeadCell>
       <TableHeadCell>Status</TableHeadCell>
-      <TableHeadCell>Action</TableHeadCell>
     </template>
 
     <tr v-if="isLoading">
@@ -72,6 +72,12 @@
       :key="consumable.id"
       class="border-t border-gray-100 dark:border-gray-800"
     >
+      <td class="px-5 py-4 sm:px-6">
+        <div class="flex items-center gap-2">
+          <ButtonConsumableHistory :consumable="consumable" @changed="fetchConsumables(meta.page)" />
+          <ButtonUpdateConsumable :consumable="consumable" @updated="fetchConsumables(meta.page)" />
+        </div>
+      </td>
       <td class="px-5 py-4 sm:px-6">
         <div>
           <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
@@ -107,12 +113,6 @@
             {{ consumable.is_active ? 'Active' : 'Inactive' }}
           </Badge>
           <Badge v-if="isLowStock(consumable)" color="warning" size="sm">Low stock</Badge>
-        </div>
-      </td>
-      <td class="px-5 py-4 sm:px-6">
-        <div class="flex items-center gap-2">
-          <ButtonConsumableHistory :consumable="consumable" @changed="fetchConsumables(meta.page)" />
-          <ButtonUpdateConsumable :consumable="consumable" @updated="fetchConsumables(meta.page)" />
         </div>
       </td>
     </tr>

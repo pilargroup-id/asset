@@ -13,6 +13,7 @@ app.disable('x-powered-by');
 app.use(cors({
   origin: config.cors.origin,
   credentials: true,
+  exposedHeaders: ['Content-Disposition', 'X-Export-Row-Count'],
 }));
 
 app.use(express.json({ limit: '1mb' }));

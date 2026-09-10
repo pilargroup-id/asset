@@ -41,12 +41,12 @@
     </template>
 
     <template #head>
+      <TableHeadCell>Actions</TableHeadCell>
       <TableHeadCell>Code</TableHeadCell>
       <TableHeadCell>Name</TableHeadCell>
       <TableHeadCell>Tracking Type</TableHeadCell>
       <TableHeadCell>Depreciable</TableHeadCell>
       <TableHeadCell>Status</TableHeadCell>
-      <TableHeadCell>Actions</TableHeadCell>
     </template>
 
     <tr v-if="isLoading">
@@ -71,6 +71,9 @@
       class="border-t border-gray-100 dark:border-gray-800"
     >
       <td class="px-5 py-4 sm:px-6">
+        <ButtonUpdateAssetCategory :category="category" @updated="fetchCategories" />
+      </td>
+      <td class="px-5 py-4 sm:px-6">
         <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
           {{ category.code || '-' }}
         </span>
@@ -90,9 +93,6 @@
         <Badge :color="category.is_active ? 'success' : 'light'" size="sm">
           {{ category.is_active ? 'Active' : 'Inactive' }}
         </Badge>
-      </td>
-      <td class="px-5 py-4 sm:px-6">
-        <ButtonUpdateAssetCategory :category="category" @updated="fetchCategories" />
       </td>
     </tr>
 

@@ -212,6 +212,8 @@ import {
   SettingsIcon,
   FolderIcon,
   LayoutDashboardIcon,
+  PieChartIcon,
+  TableIcon,
 } from "../../icons";
 import { useSidebar } from "@/composables/useSidebar";
 
@@ -257,6 +259,19 @@ const menuGroups = [
           { name: "Locations", path: "/master/locations", pro: false },
           { name: "Units of Measure", path: "/master/uoms", pro: false },
           { name: "Numbering", path: "/master/numbering", pro: false },
+        ],
+      },
+      {
+        icon: PieChartIcon,
+        name: "Depreciation",
+        path: "/depreciation/policies",
+      },
+      {
+        icon: TableIcon,
+        name: "Data Management",
+        subItems: [
+          { name: "Import", path: "/data/import", pro: false },
+          { name: "Export / Reports", path: "/data/export", pro: false },
         ],
       },
     ],

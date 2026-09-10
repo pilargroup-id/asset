@@ -41,13 +41,13 @@
     </template>
 
     <template #head>
+      <TableHeadCell>Actions</TableHeadCell>
       <TableHeadCell>Name</TableHeadCell>
       <TableHeadCell>Sequence Type</TableHeadCell>
       <TableHeadCell>Pattern</TableHeadCell>
       <TableHeadCell>Current Sequence</TableHeadCell>
       <TableHeadCell>Reset Period</TableHeadCell>
       <TableHeadCell>Status</TableHeadCell>
-      <TableHeadCell>Actions</TableHeadCell>
     </template>
 
     <tr v-if="isLoading">
@@ -72,6 +72,9 @@
       class="border-t border-gray-100 dark:border-gray-800"
     >
       <td class="px-5 py-4 sm:px-6">
+        <ButtonUpdateNumbering :config="config" @updated="fetchNumberingConfigs" />
+      </td>
+      <td class="px-5 py-4 sm:px-6">
         <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
           {{ config.name }}
         </span>
@@ -92,9 +95,6 @@
         <Badge :color="config.is_active ? 'success' : 'light'" size="sm">
           {{ config.is_active ? 'Active' : 'Inactive' }}
         </Badge>
-      </td>
-      <td class="px-5 py-4 sm:px-6">
-        <ButtonUpdateNumbering :config="config" @updated="fetchNumberingConfigs" />
       </td>
     </tr>
 
