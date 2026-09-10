@@ -431,6 +431,105 @@ export async function updateConsumable(
   return data
 }
 
+export interface ConsumableBalanceRecord {
+  consumable_id: number
+  location_id: number
+  location_code?: string
+  location_name?: string
+  quantity: number | string
+  [key: string]: unknown
+}
+
+export type ConsumableMovementType =
+  | 'OPENING_BALANCE'
+  | 'RECEIVE'
+  | 'ISSUE'
+  | 'TRANSFER'
+  | 'ADJUSTMENT'
+  | 'WRITE_OFF'
+  | 'RETURN'
+
+export type ConsumableRecipientType = 'USER' | 'DEPARTMENT' | 'ASSET' | 'LOCATION' | 'GENERAL_USAGE'
+
+export interface ConsumableTransactionRecord {
+  id: number
+  transaction_number: string
+  consumable_id: number
+  movement_type: ConsumableMovementType
+  from_location_id?: number | string | null
+  from_location_name?: string | null
+  to_location_id?: number | string | null
+  to_location_name?: string | null
+  quantity: number | string
+  unit_cost?: number | string | null
+  recipient_type?: ConsumableRecipientType | null
+  recipient_user_id?: string | null
+  recipient_user_name_snapshot?: string | null
+  recipient_department_id?: string | null
+  recipient_department_name_snapshot?: string | null
+  recipient_asset_id?: number | string | null
+  recipient_asset_number?: string | null
+  recipient_location_id?: number | string | null
+  purpose?: string | null
+  reference_number?: string | null
+  notes?: string | null
+  transaction_date: string
+  created_by?: number | string | null
+  [key: string]: unknown
+}
+
+export interface ConsumableHistoryData {
+  consumable: ConsumableRecord
+  balances: ConsumableBalanceRecord[]
+  transactions: ConsumableTransactionRecord[]
+}
+
+export interface ConsumableHistoryResponse {
+  success: boolean
+  message: string
+  data: ConsumableHistoryData
+}
+
+// GET /api/consumables/:id/history
+export async function getConsumableHistory(id: number | string): Promise<ConsumableHistoryResponse> {
+  const { data } = await api.get<ConsumableHistoryResponse>(`/consumables/${id}/history`)
+  return data
+}
+
+export interface CreateConsumableMovementPayload {
+  movement_type: ConsumableMovementType
+  quantity: number
+  from_location_id?: number | string
+  to_location_id?: number | string
+  unit_cost?: number
+  recipient_type?: ConsumableRecipientType
+  recipient_user_id?: string
+  recipient_user_name_snapshot?: string
+  recipient_department_id?: string
+  recipient_department_name_snapshot?: string
+  recipient_asset_id?: number | string
+  recipient_location_id?: number | string
+  purpose?: string
+  reference_number?: string
+  notes?: string
+  transaction_date?: string
+}
+
+export interface ConsumableMovementResponse {
+  success: boolean
+  message: string
+  data: ConsumableTransactionRecord
+}
+
+// POST /api/consumables/:id/movements
+export async function createConsumableMovement(
+  id: number | string,
+  payload: CreateConsumableMovementPayload
+): Promise<ConsumableMovementResponse> {
+  const { data } = await api.post<ConsumableMovementResponse>(`/consumables/${id}/movements`, payload)
+  return data
+}
+
 export interface MasterDataRecord {
   id: number | string
   code?: string | null

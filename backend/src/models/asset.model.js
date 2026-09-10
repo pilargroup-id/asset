@@ -4,8 +4,9 @@ async function list({whereSql='1=1',params=[],filters={},limit=25,offset=0},conn
   if(filters.status){where.push('a.status=?');p.push(filters.status);} if(filters.category_id){where.push('a.category_id=?');p.push(filters.category_id);} if(filters.location_id){where.push('a.current_location_id=?');p.push(filters.location_id);} if(filters.search){where.push('(a.asset_number LIKE ? OR a.asset_name LIKE ? OR a.serial_number LIKE ?)'); const q=`%${filters.search}%`;p.push(q,q,q);}
   const w=where.join(' AND ');
   const [[count]]=await conn.query(`SELECT COUNT(*) total FROM assets a WHERE ${w}`,p);
-  const [rows]=await conn.query(`SELECT a.*,c.name category_name,c.is_depreciable,b.name brand_name,m.name model_name,l.name current_location_name,v.name vendor_name
-    FROM assets a JOIN master_categories c ON c.id=a.category_id LEFT JOIN master_brands b ON b.id=a.brand_id LEFT JOIN master_models m ON m.id=a.model_id LEFT JOIN master_locations l ON l.id=a.current_location_id LEFT JOIN master_vendors v ON v.id=a.vendor_id
+  const [rows]=await conn.query(`SELECT a.*,c.name category_name,c.is_depreciable,b.name brand_name,m.name model_name,l.name current_location_name,v.name vendor_name,
+    x.assignment_type,x.assigned_user_name_snapshot,x.assigned_department_name_snapshot,x.assigned_location_name_snapshot,x.assigned_at assignment_assigned_at
+    FROM assets a JOIN master_categories c ON c.id=a.category_id LEFT JOIN master_brands b ON b.id=a.brand_id LEFT JOIN master_models m ON m.id=a.model_id LEFT JOIN master_locations l ON l.id=a.current_location_id LEFT JOIN master_vendors v ON v.id=a.vendor_id LEFT JOIN asset_assignments x ON x.id=a.current_assignment_id
     WHERE ${w} ORDER BY a.id DESC LIMIT ? OFFSET ?`,[...p,limit,offset]);
   return {rows,total:count.total};
 }

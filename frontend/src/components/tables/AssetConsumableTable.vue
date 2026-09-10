@@ -110,7 +110,10 @@
         </div>
       </td>
       <td class="px-5 py-4 sm:px-6">
-        <ButtonUpdateConsumable :consumable="consumable" @updated="fetchConsumables(meta.page)" />
+        <div class="flex items-center gap-2">
+          <ButtonConsumableHistory :consumable="consumable" @changed="fetchConsumables(meta.page)" />
+          <ButtonUpdateConsumable :consumable="consumable" @updated="fetchConsumables(meta.page)" />
+        </div>
       </td>
     </tr>
 
@@ -137,6 +140,7 @@ import TableHeadCell from '@/components/tables/TableHeadCell.vue'
 import TablePagination from '@/components/tables/TablePagination.vue'
 import ButtonCreateConsumable from '@/components/buttons/create/ButtonCreateConsumable.vue'
 import ButtonUpdateConsumable from '@/components/buttons/update/ButtonUpdateConsumable.vue'
+import ButtonConsumableHistory from '@/components/buttons/view/ButtonConsumableHistory.vue'
 import { RefreshIcon } from '@/icons'
 
 const consumables = ref([])
