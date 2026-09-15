@@ -9,7 +9,7 @@
       Create
     </button>
 
-    <DialogCreateNumbering
+    <DialogCreateDepreciationPolicy
       :is-open="isModalOpen"
       @close="isModalOpen = false"
       @created="(payload) => emit('created', payload)"
@@ -20,7 +20,7 @@
 <script setup>
 import { ref } from 'vue'
 import { PlusIcon } from '@/icons'
-import DialogCreateNumbering from '@/components/dialog/DialogCreateNumbering.vue'
+import DialogCreateDepreciationPolicy from '@/components/dialog/DialogCreateDepreciationPolicy.vue'
 
 const emit = defineEmits(['created'])
 

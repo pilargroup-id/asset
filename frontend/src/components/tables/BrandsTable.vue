@@ -41,10 +41,10 @@
     </template>
 
     <template #head>
+      <TableHeadCell>Actions</TableHeadCell>
       <TableHeadCell>Code</TableHeadCell>
       <TableHeadCell>Name</TableHeadCell>
       <TableHeadCell>Status</TableHeadCell>
-      <TableHeadCell>Actions</TableHeadCell>
     </template>
 
     <tr v-if="isLoading">
@@ -69,6 +69,9 @@
       class="border-t border-gray-100 dark:border-gray-800"
     >
       <td class="px-5 py-4 sm:px-6">
+        <ButtonUpdateBrand :brand="brand" @updated="fetchBrands" />
+      </td>
+      <td class="px-5 py-4 sm:px-6">
         <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
           {{ brand.code || '-' }}
         </span>
@@ -80,9 +83,6 @@
         <Badge :color="brand.is_active ? 'success' : 'light'" size="sm">
           {{ brand.is_active ? 'Active' : 'Inactive' }}
         </Badge>
-      </td>
-      <td class="px-5 py-4 sm:px-6">
-        <ButtonUpdateBrand :brand="brand" @updated="fetchBrands" />
       </td>
     </tr>
 

@@ -1,7 +1,7 @@
 <template>
   <aside
     :class="[
-      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 bg-white dark:bg-gray-900 dark:border-gray-800 text-gray-900 h-screen transition-all duration-300 ease-in-out z-99999 border-r border-gray-200',
+      'fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0 sidebar-gradient-bg text-white h-screen transition-all duration-300 ease-in-out z-99999',
       {
         'lg:w-[290px]': isExpanded || isMobileOpen || isHovered,
         'lg:w-[90px]': !isExpanded && !isHovered,
@@ -19,20 +19,21 @@
         !isExpanded && !isHovered ? 'lg:justify-center' : 'justify-start',
       ]"
     >
-      <router-link to="/" class="flex items-center gap-3">
+      <router-link to="/" class="flex items-center">
         <img
-          src="/images/logo/logo-piagam.svg"
-          alt="Logo"
-          width="52"
-          height="52"
-          class="shrink-0"
-        />
-        <span
           v-if="isExpanded || isHovered || isMobileOpen"
-          class="bg-gradient-to-r from-[#caa14a] to-[#8a6a1f] bg-clip-text text-2xl font-extrabold tracking-tight text-transparent dark:from-[#f3dfa0] dark:to-[#caa14a]"
-        >
-          Asset
-        </span>
+          src="/images/logo/logo-piagam2.svg"
+          alt="Piagam Logo"
+          class="h-16 w-auto max-w-[240px] object-contain shrink-0"
+        />
+        <img
+          v-else
+          src="/images/logo/logo-piagam.svg"
+          alt="Piagam Logo"
+          width="48"
+          height="48"
+          class="shrink-0 object-contain"
+        />
       </router-link>
     </div>
     <div
@@ -43,7 +44,7 @@
           <div v-for="(menuGroup, groupIndex) in menuGroups" :key="groupIndex">
             <h2
               :class="[
-                'mb-4 text-xs uppercase flex leading-[20px] text-gray-400',
+                'mb-4 text-xs uppercase flex leading-[20px] text-white/40',
                 !isExpanded && !isHovered
                   ? 'lg:justify-center'
                   : 'justify-start',
@@ -60,9 +61,9 @@
                   v-if="item.subItems"
                   @click="toggleSubmenu(groupIndex, index)"
                   :class="[
-                    'menu-item group w-full',
+                    'menu-item nav-item group w-full',
                     {
-                      'menu-item-active': isSubmenuOpen(groupIndex, index),
+                      'menu-item-active nav-item-active': isSubmenuOpen(groupIndex, index),
                       'menu-item-inactive': !isSubmenuOpen(groupIndex, index),
                     },
                     !isExpanded && !isHovered
@@ -89,7 +90,7 @@
                     :class="[
                       'ml-auto w-5 h-5 transition-transform duration-200',
                       {
-                        'rotate-180 text-brand-500': isSubmenuOpen(
+                        'rotate-180 icon-active-gold': isSubmenuOpen(
                           groupIndex,
                           index
                         ),
@@ -101,9 +102,9 @@
                   v-else-if="item.path"
                   :to="item.path"
                   :class="[
-                    'menu-item group',
+                    'menu-item nav-item group',
                     {
-                      'menu-item-active': isActive(item.path),
+                      'menu-item-active nav-item-active': isActive(item.path),
                       'menu-item-inactive': !isActive(item.path),
                     },
                   ]"
@@ -196,7 +197,6 @@
           </div>
         </div>
       </nav>
-      <SidebarWidget v-if="isExpanded || isHovered || isMobileOpen" />
     </div>
   </aside>
 </template>
@@ -212,8 +212,9 @@ import {
   SettingsIcon,
   FolderIcon,
   LayoutDashboardIcon,
+  PieChartIcon,
+  TableIcon,
 } from "../../icons";
-import SidebarWidget from "./SidebarWidget.vue";
 import { useSidebar } from "@/composables/useSidebar";
 
 const route = useRoute();
@@ -258,6 +259,19 @@ const menuGroups = [
           { name: "Locations", path: "/master/locations", pro: false },
           { name: "Units of Measure", path: "/master/uoms", pro: false },
           { name: "Numbering", path: "/master/numbering", pro: false },
+        ],
+      },
+      {
+        icon: PieChartIcon,
+        name: "Depreciation",
+        path: "/depreciation/policies",
+      },
+      {
+        icon: TableIcon,
+        name: "Data Management",
+        subItems: [
+          { name: "Import", path: "/data/import", pro: false },
+          { name: "Export / Reports", path: "/data/export", pro: false },
         ],
       },
     ],

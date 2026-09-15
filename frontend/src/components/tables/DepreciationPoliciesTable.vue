@@ -22,66 +22,78 @@
         <input
           v-model="search"
           type="text"
-          placeholder="Search code or name..."
+          placeholder="Search policy name..."
           class="dark:bg-dark-900 h-11 w-full rounded-lg border border-gray-300 bg-transparent py-2.5 pl-11 pr-4 text-sm text-gray-800 shadow-theme-xs placeholder:text-gray-400 focus:border-brand-300 focus:outline-hidden focus:ring-3 focus:ring-brand-500/10 dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 dark:focus:border-brand-800"
         />
       </div>
 
       <div class="flex items-center gap-3">
         <button
-          @click="fetchUoms"
+          @click="fetchPolicies"
           :disabled="isLoading"
           class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-theme-sm font-medium text-gray-700 shadow-theme-xs hover:bg-gray-50 hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200"
         >
           <RefreshIcon :class="['h-4 w-4', { 'animate-spin': isLoading }]" />
           Refresh
         </button>
-        <ButtonCreateUom @created="fetchUoms" />
+        <ButtonCreateDepreciationPolicy @created="fetchPolicies" />
       </div>
     </template>
 
     <template #head>
       <TableHeadCell>Actions</TableHeadCell>
-      <TableHeadCell>Code</TableHeadCell>
       <TableHeadCell>Name</TableHeadCell>
+      <TableHeadCell>Method</TableHeadCell>
+      <TableHeadCell>Useful Life</TableHeadCell>
+      <TableHeadCell>Salvage</TableHeadCell>
       <TableHeadCell>Status</TableHeadCell>
     </template>
 
     <tr v-if="isLoading">
-      <td colspan="4" class="px-5 py-10 text-center sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">Loading units of measure...</p>
+      <td colspan="6" class="px-5 py-10 text-center sm:px-6">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">Loading depreciation policies...</p>
       </td>
     </tr>
     <tr v-else-if="errorMessage">
-      <td colspan="4" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="6" class="px-5 py-10 text-center sm:px-6">
         <p class="text-error-600 text-theme-sm dark:text-error-500">{{ errorMessage }}</p>
       </td>
     </tr>
-    <tr v-else-if="!filteredUoms.length">
-      <td colspan="4" class="px-5 py-10 text-center sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">No units of measure found.</p>
+    <tr v-else-if="!filteredPolicies.length">
+      <td colspan="6" class="px-5 py-10 text-center sm:px-6">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">No depreciation policies found.</p>
       </td>
     </tr>
     <tr
-      v-for="uom in paginatedUoms"
+      v-for="policy in paginatedPolicies"
       v-else
-      :key="uom.id"
+      :key="policy.id"
       class="border-t border-gray-100 dark:border-gray-800"
     >
       <td class="px-5 py-4 sm:px-6">
-        <ButtonUpdateUom :uom="uom" @updated="fetchUoms" />
+        <ButtonUpdateDepreciationPolicy :policy="policy" @updated="fetchPolicies" />
       </td>
       <td class="px-5 py-4 sm:px-6">
         <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
-          {{ uom.code || '-' }}
+          {{ policy.name }}
         </span>
       </td>
       <td class="px-5 py-4 sm:px-6">
-        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ uom.name }}</p>
+        <Badge :color="policy.method === 'STRAIGHT_LINE' ? 'success' : 'warning'" size="sm">
+          {{ formatLabel(policy.method) }}
+        </Badge>
       </td>
       <td class="px-5 py-4 sm:px-6">
-        <Badge :color="uom.is_active ? 'success' : 'light'" size="sm">
-          {{ uom.is_active ? 'Active' : 'Inactive' }}
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ policy.useful_life_months }} months</p>
+      </td>
+      <td class="px-5 py-4 sm:px-6">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">
+          {{ policy.salvage_value_type === 'PERCENT' ? `${policy.salvage_value}%` : formatCurrency(policy.salvage_value) }}
+        </p>
+      </td>
+      <td class="px-5 py-4 sm:px-6">
+        <Badge :color="policy.is_active ? 'success' : 'light'" size="sm">
+          {{ policy.is_active ? 'Active' : 'Inactive' }}
         </Badge>
       </td>
     </tr>
@@ -90,10 +102,10 @@
       <TablePagination
         :page="page"
         :limit="limit"
-        :total="filteredUoms.length"
+        :total="filteredPolicies.length"
         :total-pages="totalPages"
         :disabled="isLoading"
-        item-label="units"
+        item-label="policies"
         @update:page="(value) => (page = value)"
       />
     </template>
@@ -102,37 +114,33 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import { getMasterData } from '@/service/axios'
+import { getDepreciationPolicies } from '@/service/axios'
 import Badge from '@/components/ui/Badge.vue'
 import BaseTable from '@/components/tables/BaseTable.vue'
 import TableHeadCell from '@/components/tables/TableHeadCell.vue'
 import TablePagination from '@/components/tables/TablePagination.vue'
-import ButtonCreateUom from '@/components/buttons/create/ButtonCreateUom.vue'
-import ButtonUpdateUom from '@/components/buttons/update/ButtonUpdateUom.vue'
+import ButtonCreateDepreciationPolicy from '@/components/buttons/create/ButtonCreateDepreciationPolicy.vue'
+import ButtonUpdateDepreciationPolicy from '@/components/buttons/update/ButtonUpdateDepreciationPolicy.vue'
 import { RefreshIcon } from '@/icons'
 
-const uoms = ref([])
+const policies = ref([])
 const isLoading = ref(false)
 const errorMessage = ref('')
 const search = ref('')
 const page = ref(1)
 const limit = 25
 
-const filteredUoms = computed(() => {
+const filteredPolicies = computed(() => {
   const term = search.value.trim().toLowerCase()
-  if (!term) return uoms.value
-  return uoms.value.filter((uom) =>
-    [uom.code, uom.name]
-      .filter(Boolean)
-      .some((value) => String(value).toLowerCase().includes(term))
-  )
+  if (!term) return policies.value
+  return policies.value.filter((policy) => String(policy.name || '').toLowerCase().includes(term))
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredUoms.value.length / limit)))
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredPolicies.value.length / limit)))
 
-const paginatedUoms = computed(() => {
+const paginatedPolicies = computed(() => {
   const start = (page.value - 1) * limit
-  return filteredUoms.value.slice(start, start + limit)
+  return filteredPolicies.value.slice(start, start + limit)
 })
 
 watch(search, () => {
@@ -143,19 +151,40 @@ watch(totalPages, (value) => {
   if (page.value > value) page.value = value
 })
 
-async function fetchUoms() {
+function formatLabel(value) {
+  if (!value) return '-'
+  return value
+    .split('_')
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
+function formatCurrency(value) {
+  if (value === null || value === undefined || value === '') return '-'
+  const number = Number(value)
+  if (Number.isNaN(number)) return '-'
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    maximumFractionDigits: 0,
+  }).format(number)
+}
+
+async function fetchPolicies() {
   isLoading.value = true
   errorMessage.value = ''
   try {
-    const data = await getMasterData('uoms')
-    uoms.value = data?.data ?? []
+    const data = await getDepreciationPolicies()
+    policies.value = data?.data ?? []
   } catch (err) {
-    uoms.value = []
-    errorMessage.value = err?.response?.data?.message || 'Failed to load units of measure.'
+    policies.value = []
+    errorMessage.value = err?.response?.data?.message || 'Failed to load depreciation policies.'
   } finally {
     isLoading.value = false
   }
 }
 
-onMounted(fetchUoms)
+defineExpose({ fetchPolicies })
+
+onMounted(fetchPolicies)
 </script>

@@ -1,7 +1,10 @@
 <template>
-  <router-link to="/" class="lg:hidden">
-    <img class="dark:hidden" src="/images/logo/logo.svg" alt="Logo" />
-    <img class="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" />
+  <router-link to="/" class="flex items-center lg:hidden">
+    <img
+      src="/images/logo/logo-piagam2.svg"
+      alt="Piagam Logo"
+      class="h-12 w-auto max-w-[200px] object-contain"
+    />
   </router-link>
 </template>
 

@@ -87,6 +87,30 @@ const router = createRouter({
       },
     },
     {
+      path: '/depreciation/policies',
+      name: 'Depreciation Policies',
+      component: () => import('../components/pages/depreciation/DepreciationPoliciesPage.vue'),
+      meta: {
+        title: 'Depreciation Policies',
+      },
+    },
+    {
+      path: '/data/import',
+      name: 'Import',
+      component: () => import('../components/pages/data/ImportPage.vue'),
+      meta: {
+        title: 'Import',
+      },
+    },
+    {
+      path: '/data/export',
+      name: 'Export',
+      component: () => import('../components/pages/data/ExportPage.vue'),
+      meta: {
+        title: 'Export & Reports',
+      },
+    },
+    {
       path: '/permissions/list',
       name: 'Permission List',
       component: () => import('../components/pages/permissions/PermissionListPage.vue'),
@@ -218,6 +242,6 @@ const router = createRouter({
 export default router
 
 router.beforeEach((to, from, next) => {
-  document.title = `Vue.js ${to.meta.title} | TailAdmin - Vue.js Tailwind CSS Dashboard Template`
+  document.title = `${to.meta.title} | Asset Management System`
   next()
 })

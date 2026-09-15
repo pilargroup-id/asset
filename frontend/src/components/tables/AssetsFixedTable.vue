@@ -42,28 +42,29 @@
     </template>
 
     <template #head>
+      <TableHeadCell>Action</TableHeadCell>
       <TableHeadCell>Asset</TableHeadCell>
       <TableHeadCell>Category</TableHeadCell>
       <TableHeadCell>Brand / Model</TableHeadCell>
       <TableHeadCell>Location</TableHeadCell>
       <TableHeadCell>Condition</TableHeadCell>
       <TableHeadCell>Status</TableHeadCell>
+      <TableHeadCell>Assigned To</TableHeadCell>
       <TableHeadCell>Purchase Cost</TableHeadCell>
-      <TableHeadCell>Action</TableHeadCell>
     </template>
 
     <tr v-if="isLoading">
-      <td colspan="8" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="9" class="px-5 py-10 text-center sm:px-6">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">Loading assets...</p>
       </td>
     </tr>
     <tr v-else-if="errorMessage">
-      <td colspan="8" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="9" class="px-5 py-10 text-center sm:px-6">
         <p class="text-error-600 text-theme-sm dark:text-error-500">{{ errorMessage }}</p>
       </td>
     </tr>
     <tr v-else-if="!assets.length">
-      <td colspan="8" class="px-5 py-10 text-center sm:px-6">
+      <td colspan="9" class="px-5 py-10 text-center sm:px-6">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">No fixed assets found.</p>
       </td>
     </tr>
@@ -73,7 +74,14 @@
       :key="asset.id"
       class="border-t border-gray-100 dark:border-gray-800"
     >
-      <td class="px-5 py-4 sm:px-6">
+      <td class="px-5 py-4 whitespace-nowrap sm:px-6">
+        <div class="flex items-center gap-2">
+          <ButtonAssetHistory :asset="asset" @changed="fetchAssets(meta.page)" />
+          <ButtonAssetDepreciation v-if="asset.is_depreciable" :asset="asset" @changed="fetchAssets(meta.page)" />
+          <ButtonUpdateAssetsFixed :asset="asset" @updated="fetchAssets(meta.page)" />
+        </div>
+      </td>
+      <td class="px-5 py-4 whitespace-nowrap sm:px-6">
         <div>
           <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
             {{ asset.asset_name }}
@@ -83,26 +91,29 @@
           </span>
         </div>
       </td>
-      <td class="px-5 py-4 sm:px-6">
+      <td class="px-5 py-4 whitespace-nowrap sm:px-6">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ asset.category_name || '-' }}</p>
       </td>
-      <td class="px-5 py-4 sm:px-6">
+      <td class="px-5 py-4 whitespace-nowrap sm:px-6">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ brandModel(asset) }}</p>
       </td>
-      <td class="px-5 py-4 sm:px-6">
+      <td class="px-5 py-4 whitespace-nowrap sm:px-6">
         <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ asset.current_location_name || '-' }}</p>
       </td>
-      <td class="px-5 py-4 sm:px-6">
+      <td class="px-5 py-4 whitespace-nowrap sm:px-6">
         <Badge :color="conditionColor(asset.asset_condition)" size="sm">
           {{ formatLabel(asset.asset_condition) }}
         </Badge>
       </td>
-      <td class="px-5 py-4 sm:px-6">
+      <td class="px-5 py-4 whitespace-nowrap sm:px-6">
         <Badge :color="statusColor(asset.status)" size="sm">
           {{ formatLabel(asset.status) }}
         </Badge>
       </td>
-      <td class="px-5 py-4 sm:px-6">
+      <td class="px-5 py-4 whitespace-nowrap sm:px-6">
+        <p class="text-gray-500 text-theme-sm dark:text-gray-400">{{ assignedTo(asset) }}</p>
+      </td>
+      <td class="px-5 py-4 whitespace-nowrap sm:px-6">
         <div>
           <span class="block font-medium text-gray-800 text-theme-sm dark:text-white/90">
             {{ formatCurrency(asset.purchase_cost) }}
@@ -111,9 +122,6 @@
             {{ formatDate(asset.purchase_date) }}
           </span>
         </div>
-      </td>
-      <td class="px-5 py-4 sm:px-6">
-        <ButtonUpdateAssetsFixed :asset="asset" @updated="fetchAssets(meta.page)" />
       </td>
     </tr>
 
@@ -140,6 +148,8 @@ import TableHeadCell from '@/components/tables/TableHeadCell.vue'
 import TablePagination from '@/components/tables/TablePagination.vue'
 import ButtonCreateAssetsFixed from '@/components/buttons/create/ButtonCreateAssetsFixed.vue'
 import ButtonUpdateAssetsFixed from '@/components/buttons/update/ButtonUpdateAssetsFixed.vue'
+import ButtonAssetHistory from '@/components/buttons/view/ButtonAssetHistory.vue'
+import ButtonAssetDepreciation from '@/components/buttons/view/ButtonAssetDepreciation.vue'
 import { RefreshIcon } from '@/icons'
 
 const assets = ref([])
@@ -180,6 +190,21 @@ const formatLabel = (value) => {
 const brandModel = (asset) => {
   const parts = [asset.brand_name, asset.model_name].filter(Boolean)
   return parts.length ? parts.join(' / ') : '-'
+}
+
+const assignedTo = (asset) => {
+  switch (asset.assignment_type) {
+    case 'USER':
+      return asset.assigned_user_name_snapshot || '-'
+    case 'DEPARTMENT':
+      return asset.assigned_department_name_snapshot || '-'
+    case 'LOCATION':
+      return asset.assigned_location_name_snapshot || '-'
+    case 'SHARED_POOL':
+      return 'Shared Pool'
+    default:
+      return '-'
+  }
 }
 
 const formatCurrency = (value) => {
